@@ -1,4 +1,4 @@
-all: multiplexer
+all: multiplexer mp2
 
 %: %.go
 	source ./go_env.sh; \
@@ -10,4 +10,4 @@ test:
 	curl -H 'Host: p7:9' http://localhost:8081
 
 setcap:
-	sudo setcap cap_net_bind_service=ep multiplexer
+	sudo setcap cap_net_bind_service=ep mp2
