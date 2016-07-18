@@ -128,6 +128,11 @@ func forwardHTTP(conn net.Conn, req *http.Request) {
 		defer conn.Close()
 		io.Copy(conn, upstream)
 	}()
+	go func() {
+		defer conn.Close()
+		defer upstream.Close()
+		io.Copy(upstream, conn)
+	}()
 }
 
 func forwardTLS(conn net.Conn, header []byte) {
@@ -190,12 +195,6 @@ func forwardTLS(conn net.Conn, header []byte) {
 	n_ext := int(payload[offset_ext])<<8 | int(payload[offset_ext+1])
 	_ = n_ext
 	offset_current := offset_ext + 2
-	var offset_hostname int
-	var offset_relocate [][]int
-	// payload len
-	offset_relocate = append(offset_relocate, []int{1, 3})
-	// ext len
-	offset_relocate = append(offset_relocate, []int{offset_ext, 2})
 	for offset_current < n {
 		//log.Println("offset_current", offset_current)
 		typ_current := int(payload[offset_current])<<8 | int(payload[offset_current+1])
@@ -214,10 +213,6 @@ func forwardTLS(conn net.Conn, header []byte) {
 				log.Println("SNI", typ_servername, string(servername))
 				if typ_servername == 0 {
 					host = string(servername)
-					offset_hostname = offset_now+3
-					offset_relocate = append(offset_relocate, []int{offset_now+1, 2})
-					offset_relocate = append(offset_relocate, []int{offset_now-2, 2})
-					offset_relocate = append(offset_relocate, []int{offset_current+2, 2})
 				}
 				offset_now += 3+n_servername
 			}
@@ -232,32 +227,15 @@ func forwardTLS(conn net.Conn, header []byte) {
 		conn.Close()
 		return
 	}
-	// FIXME  modify request!
-	payload_mod := make([]byte, len(payload) + len(upstreamAddr) - len(host))
-	copy(payload_mod, payload[:offset_hostname])
-	copy(payload_mod[offset_hostname:offset_hostname+len(upstreamAddr)], []byte(upstreamAddr))
-	copy(payload_mod[offset_hostname+len(upstreamAddr):], payload[offset_hostname+len(host):])
-	// need to change lengths
-	n_delta := len(upstreamAddr) - len(host)
-	log.Println(offset_relocate)
-	log.Println(n_delta)
-	for _, reloc := range offset_relocate {
-		if reloc[1] == 2 {
-			encodeInt16(payload_mod[reloc[0]:], decodeInt16(payload[reloc[0]:]) + n_delta)
-		} else if reloc[1] == 3 {
-			encodeInt24(payload_mod[reloc[0]:], decodeInt24(payload[reloc[0]:]) + n_delta)
-		}
-	}
-	encodeInt16(header[3:], decodeInt16(header[3:]) + n_delta)
+	// FIXME dont modify request!
 
-
-	// change SNI hostname to upstream name
-	_, err = upstream.Write(append(header, payload_mod...))
+	_, err = upstream.Write(append(header, payload...))
 	if err != nil {
 		log.Println("send failed", err)
 		conn.Close()
 		return
 	}
+	// FIXME why...
 	go func() {
 		defer upstream.Close()
 		defer conn.Close()
