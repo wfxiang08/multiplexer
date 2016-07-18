@@ -23,7 +23,7 @@ func main() {
 	yaml.Unmarshal(content, &forwardTable)
 
 	log.Println("multiplexer starting...")
-	addr80, err := net.ResolveTCPAddr("tcp", ":8080")
+	addr80, err := net.ResolveTCPAddr("tcp", ":8081")
 	if err != nil {
 		log.Fatalln("net.resolve", err)
 	}
