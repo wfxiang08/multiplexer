@@ -6,7 +6,11 @@ import (
 )
 
 func main() {
-	ln80, err := net.Listen("tcp", ":8080")
+	addr80, err := net.ResolveTCPAddr("tcp", ":8080")
+	if err != nil {
+		log.Fatalln("net.resolve", err)
+	}
+	ln80, err := net.ListenTCP("tcp", addr80)
 	if err != nil {
 		log.Fatalln("net.Listen", err)
 	}
