@@ -172,6 +172,10 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	for key, value := range resp.Header {
+		// filter headers
+		if key == "Connection" {
+			continue
+		}
 		w.Header()[key] = value
 	}
 	w.WriteHeader(resp.StatusCode)
