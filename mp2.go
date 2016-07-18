@@ -176,5 +176,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	w.WriteHeader(resp.StatusCode)
 	//resp.Write(w)
-	io.Copy(w, resp.Body)
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		log.Println(err)
+	}
+	resp.Body.Close()
 }
