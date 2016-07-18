@@ -1,0 +1,9 @@
+acmedir: "webroot"
+certdir: "live"
+forwardtable:
+  http:
+    default: 80
+  https:
+    default: 8443
+    "google.com": 8080
+default_host: localhost.localdomain
