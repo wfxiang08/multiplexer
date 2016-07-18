@@ -59,7 +59,7 @@ func main() {
 			if sn != "" {
 				return mapCert[sn], nil
 			} else {
-				return nil, errors.New("not found")
+				return nil, errors.New("<" + sn + "> not found")
 			}
 		},
 		NameToCertificate: mapCert,
