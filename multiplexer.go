@@ -105,11 +105,13 @@ func main() {
 
 func getForward(scheme, orig string) string {
 	for pattern, upstream := range forwardTable.(map[interface{}]interface{})[scheme].(map[interface{}]interface{}) {
+		log.Println("pattern", pattern.(string))
 		if pattern == "default" {
 			continue
 		}
 		matched, err := regexp.MatchString(pattern.(string), orig)
 		if (err == nil) && matched {
+			log.Println("matched", pattern.(string))
 			return upstream.(string)
 		}
 	}
