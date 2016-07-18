@@ -28,7 +28,7 @@ func main() {
 	forwardTable = config["forwardtable"]
 	port := config["port"]
 	porttls := config["porttls"]
-	log.Printf("%t\n%#v\n", port, porttls)
+	//log.Printf("%t\n%#v\n", port, porttls)
 
 	log.Println("multiplexer starting...")
 	addr80, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
@@ -60,13 +60,8 @@ func main() {
 				log.Println("Accept", err)
 			}
 			log.Println("conn to", conn.LocalAddr(), "from", conn.RemoteAddr())
-			rx := bufio.NewReader(conn)
-			req, err := http.ReadRequest(rx)
-			if err != nil {
-				log.Println("http req", err)
-			} else {
-				forwardHTTP(conn, req)
-			}
+
+			forwardHTTP(conn)
 		}
 	}()
 
@@ -118,7 +113,15 @@ func getForward(scheme, orig string) string {
 	return forwardTable.(map[interface{}]interface{})[scheme].(map[interface{}]interface{})["default"].(string)
 }
 
-func forwardHTTP(conn net.Conn, req *http.Request) {
+func forwardHTTP(conn net.Conn) {
+	rx := bufio.NewReader(conn)
+	req, err := http.ReadRequest(rx)
+	if err != nil {
+		log.Println("http req", err)
+		conn.Close()
+		return
+	}
+
 	log.Println(req)
 	var host string
 	if req.Host != "" {
