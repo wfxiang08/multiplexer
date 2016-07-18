@@ -38,7 +38,7 @@ func main() {
 	var default_certFile, default_keyFile string
 	var default_cert tls.Certificate
 	for _, subdir := range fi {
-		log.Println("here")
+		//log.Println("here")
 		hostname := subdir.Name()
 		certFile := certdir + "/" + hostname + "/fullchain.pem"
 		keyFile := certdir + "/" + hostname + "/privkey.pem"
@@ -77,14 +77,14 @@ func main() {
 		Handler: http.NewServeMux(),
 	}
 
-	log.Println("here2")
+	//log.Println("here2")
 	acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
 	//acmeHandler = http.FileServer(http.Dir("/dev/shm"))
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
 	plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 	go func() {
-		log.Println("herex")
+		//log.Println("herex")
 		//err := tlsServer.ListenAndServeTLS(default_certFile, default_keyFile)
 		_ = default_certFile
 		_ = default_keyFile
@@ -93,7 +93,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}()
-	log.Println("here3")
+	//log.Println("here3")
 	err = plainServer.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
