@@ -34,6 +34,7 @@ func main() {
 	mapCert := make(map[string]*tls.Certificate)
 	defaultHost := config["default_host"]
 	var default_certFile, default_keyFile string
+	var default_cert tls.Certificate
 	for _, subdir := range fi {
 		log.Println("here")
 		hostname := subdir.Name()
@@ -45,9 +46,14 @@ func main() {
 		if hostname == defaultHost {
 			default_certFile = certFile
 			default_keyFile = keyFile
+			default_cert = cert
 		}
 	}
-	tlsConfig := &tls.Config{NameToCertificate: mapCert}
+	tlsConfig := &tls.Config{
+		GetCertificate: nil,
+		NameToCertificate: mapCert,
+		Certificates: []tls.Certificate{default_cert},
+	}
 	tlsServer = &http.Server{
 		Addr: ":443",
 		TLSConfig: tlsConfig,
@@ -66,7 +72,10 @@ func main() {
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 	go func() {
 		log.Println("herex")
-		err := tlsServer.ListenAndServeTLS(default_certFile, default_keyFile)
+		//err := tlsServer.ListenAndServeTLS(default_certFile, default_keyFile)
+		_ = default_certFile
+		_ = default_keyFile
+		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
 			log.Fatal(err)
 		}
