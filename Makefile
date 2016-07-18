@@ -6,5 +6,5 @@ all: multiplexer
 
 
 test:
-	curl http://localhost:8080
-	curl -H 'Host: p7:9' http://localhost:8080
+	curl http://localhost:8081
+	curl -H 'Host: p7:9' http://localhost:8081

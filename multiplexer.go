@@ -59,7 +59,7 @@ func main() {
 			if err != nil {
 				log.Println("Accept", err)
 			}
-			log.Println("conn", conn)
+			log.Println("conn to", conn.LocalAddr(), "from", conn.RemoteAddr())
 			rx := bufio.NewReader(conn)
 			req, err := http.ReadRequest(rx)
 			if err != nil {
@@ -78,7 +78,7 @@ func main() {
 			if err != nil {
 				log.Println("Accept", err)
 			}
-			log.Println("conn", conn)
+			log.Println("conn to", conn.LocalAddr(), "from", conn.RemoteAddr())
 
 			// TLS record
 			// contentType    1 byte
