@@ -13,6 +13,7 @@ import (
 	"sync"
 	"fmt"
 	//"encoding/hex" //Dump
+	"strings"
 )
 
 //var forwardTable map[string]map[string]string
@@ -62,7 +63,8 @@ func main() {
 			}
 			log.Println("conn to", conn.LocalAddr(), "from", conn.RemoteAddr())
 
-			forwardHTTP(conn)
+			//forwardHTTP(conn)
+			convertHTTPtoTLS(conn)
 		}
 	}()
 
@@ -133,6 +135,56 @@ func forwardHTTP(conn net.Conn) {
 		defer upstream.Close()
 		io.Copy(upstream, conn)
 	}()
+}
+
+// todo
+func convertHTTPtoTLS(conn net.Conn) {
+	rx := bufio.NewReader(conn)
+	req, err := http.ReadRequest(rx)
+	if err != nil {
+		log.Println("http req", err)
+		conn.Close()
+		return
+	}
+
+	log.Println(req)
+	var host string
+	if req.Host != "" {
+		host = req.Host
+	} else {
+		host = req.URL.Host
+	}
+	log.Println("host is ", host)
+
+
+	//req.URL.Host = host
+	//req.URL.Scheme = "https"
+	newURL, err := req.URL.Parse("")
+	newURL.Host = host
+	newURL.Scheme = "https"
+
+	bodyString := ""
+	if req.Method == "GET" {
+		bodyString = "<a href=\"" + htmlEscape(newURL.String()) + "\">" + "Moved Permanently" + "</a>.\n"
+	}
+
+	resp := http.Response{}
+	resp.StatusCode = http.StatusMovedPermanently
+	resp.ProtoMajor = req.ProtoMajor
+	resp.ProtoMinor = req.ProtoMinor
+	resp.Request = req
+	resp.TransferEncoding = req.TransferEncoding
+	resp.Trailer = nil
+	resp.Body = ioutil.NopCloser(strings.NewReader(bodyString))
+	resp.Header = make(http.Header)
+	resp.Header.Set("Location", newURL.String())
+	resp.ContentLength = -1
+	//http.Redirect(conn, req, req.URL.String(), http.StatusMovedPermanently)
+	err = resp.Write(conn)
+	if err != nil {
+		log.Println("resp", err)
+	}
+	conn.Close()
 }
 
 func forwardTLS(conn net.Conn) {
@@ -288,4 +340,18 @@ func encodeInt24(payload []byte, n int) {
 	payload[0] = byte(n>>16)
 	payload[1] = byte((n>>8)%256)
 	payload[2] = byte(n%256)
+}
+
+var htmlReplacer = strings.NewReplacer(
+    "&", "&amp;",
+    "<", "&lt;",
+    ">", "&gt;",
+    // "&#34;" is shorter than "&quot;".
+    `"`, "&#34;",
+    // "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
+    "'", "&#39;",
+)
+
+func htmlEscape(s string) string {
+    return htmlReplacer.Replace(s)
 }

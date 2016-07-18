@@ -6,7 +6,7 @@ all: multiplexer
 
 
 test:
-	curl http://localhost:8081
+	curl http://localhost:8081/some/file/in
 	curl -H 'Host: p7:9' http://localhost:8081
 
 setcap:
