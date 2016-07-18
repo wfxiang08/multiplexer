@@ -191,6 +191,11 @@ func forwardTLS(conn net.Conn, header []byte) {
 	_ = n_ext
 	offset_current := offset_ext + 2
 	var offset_hostname int
+	var offset_relocate [][]int
+	// payload len
+	offset_relocate = append(offset_relocate, []int{1, 3})
+	// ext len
+	offset_relocate = append(offset_relocate, []int{offset_ext, 2})
 	for offset_current < n {
 		//log.Println("offset_current", offset_current)
 		typ_current := int(payload[offset_current])<<8 | int(payload[offset_current+1])
@@ -210,6 +215,9 @@ func forwardTLS(conn net.Conn, header []byte) {
 				if typ_servername == 0 {
 					host = string(servername)
 					offset_hostname = offset_now+3
+					offset_relocate = append(offset_relocate, []int{offset_now+1, 2})
+					offset_relocate = append(offset_relocate, []int{offset_now-2, 2})
+					offset_relocate = append(offset_relocate, []int{offset_current+2, 2})
 				}
 				offset_now += 3+n_servername
 			}
@@ -225,14 +233,26 @@ func forwardTLS(conn net.Conn, header []byte) {
 		return
 	}
 	// FIXME  modify request!
-	// change SNI hostname to upstream name
-	_, err = upstream.Write(header)
-	if err != nil {
-		log.Println("send failed", err)
-		conn.Close()
-		return
+	payload_mod := make([]byte, len(payload) + len(upstreamAddr) - len(host))
+	copy(payload_mod, payload[:offset_hostname])
+	copy(payload_mod[offset_hostname:offset_hostname+len(upstreamAddr)], []byte(upstreamAddr))
+	copy(payload_mod[offset_hostname+len(upstreamAddr):], payload[offset_hostname+len(host):])
+	// need to change lengths
+	n_delta := len(upstreamAddr) - len(host)
+	log.Println(offset_relocate)
+	log.Println(n_delta)
+	for _, reloc := range offset_relocate {
+		if reloc[1] == 2 {
+			encodeInt16(payload_mod[reloc[0]:], decodeInt16(payload[reloc[0]:]) + n_delta)
+		} else if reloc[1] == 3 {
+			encodeInt24(payload_mod[reloc[0]:], decodeInt24(payload[reloc[0]:]) + n_delta)
+		}
 	}
-	_, err = upstream.Write(payload)
+	encodeInt16(header[3:], decodeInt16(header[3:]) + n_delta)
+
+
+	// change SNI hostname to upstream name
+	_, err = upstream.Write(append(header, payload_mod...))
 	if err != nil {
 		log.Println("send failed", err)
 		conn.Close()
@@ -248,4 +268,25 @@ func forwardTLS(conn net.Conn, header []byte) {
 		defer upstream.Close()
 		io.Copy(upstream, conn)
 	}()
+}
+
+func decodeInt16(payload []byte) int {
+	n := int(payload[0])<<8 | int(payload[1])
+	return n
+}
+
+func encodeInt16(payload []byte, n int) {
+	payload[0] = byte(n>>8)
+	payload[1] = byte(n%256)
+}
+
+func decodeInt24(payload []byte) int {
+	n := int(payload[0])<<16 | int(payload[1])<<8 | int(payload[2])
+	return n
+}
+
+func encodeInt24(payload []byte, n int) {
+	payload[0] = byte(n>>16)
+	payload[1] = byte((n>>8)%256)
+	payload[2] = byte(n%256)
 }
