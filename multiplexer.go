@@ -19,6 +19,8 @@ import (
 //var forwardTable map[string]map[string]string
 var forwardTable interface{}
 var config map[string]interface{}
+var port int
+var porttls int
 
 func main() {
 	content, err := ioutil.ReadFile("config.yaml")
@@ -28,8 +30,8 @@ func main() {
 	yaml.Unmarshal(content, &config)
 	//forwardTable = map[string]interface{}(config["forwardtable"].(map[interface{}]interface{}))
 	forwardTable = config["forwardtable"]
-	port := config["port"]
-	porttls := config["porttls"]
+	port = config["port"].(int)
+	porttls = config["porttls"].(int)
 	//log.Printf("%t\n%#v\n", port, porttls)
 
 	log.Println("multiplexer starting...")
@@ -156,11 +158,12 @@ func convertHTTPtoTLS(conn net.Conn) {
 	}
 	log.Println("host is ", host)
 
+	host_replace := strings.Replace(host, fmt.Sprintf(":%d",port), fmt.Sprintf(":%d",porttls), -1)
 
 	//req.URL.Host = host
 	//req.URL.Scheme = "https"
 	newURL, err := req.URL.Parse("")
-	newURL.Host = host
+	newURL.Host = host_replace
 	newURL.Scheme = "https"
 
 	bodyString := ""
