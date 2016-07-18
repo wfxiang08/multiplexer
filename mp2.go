@@ -14,7 +14,14 @@ import (
 )
 
 var config map[string]interface{}
+var LOG_FILE = "mp2.log"
+
 func main() {
+	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatalln(err, "logfile")
+	}
+	log.SetOutput(fh)
 	content, err := ioutil.ReadFile("config2.yaml")
 	if err != nil {
 		log.Fatalln("cannot read config")
