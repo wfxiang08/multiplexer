@@ -29,23 +29,30 @@ func main() {
 		if err != nil {
 			log.Println("http req", err)
 		} else {
-			log.Println(req)
-			var host string
-			if req.Host != "" {
-				host = req.Host
-			} else {
-				host = req.URL.Host
-			}
-			log.Println("host is ", host)
-			upstream, err := net.Dial("tcp", "localhost:80")
-			if err != nil {
-			}
-			req.Write(upstream)
-			go func() {
-				defer upstream.Close()
-				defer conn.Close()
-				io.Copy(conn, upstream)
-			}()
+			forwardHTTP(conn, req)
 		}
 	}
+}
+
+func forwardHTTP(conn net.Conn, req *http.Request) {
+	log.Println(req)
+	var host string
+	if req.Host != "" {
+		host = req.Host
+	} else {
+		host = req.URL.Host
+	}
+	log.Println("host is ", host)
+	upstream, err := net.Dial("tcp", "localhost:80")
+	if err != nil {
+		log.Println("upstream offline", err)
+		conn.Close()
+		return
+	}
+	req.Write(upstream)
+	go func() {
+		defer upstream.Close()
+		defer conn.Close()
+		io.Copy(conn, upstream)
+	}()
 }
