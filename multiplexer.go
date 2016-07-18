@@ -75,24 +75,7 @@ func main() {
 			}
 			log.Println("conn to", conn.LocalAddr(), "from", conn.RemoteAddr())
 
-			// TLS record
-			// contentType    1 byte
-			// major, minor   2 bytes
-			// length         2 bytes
-			// payload
-
-			// read 5 bytes
-			// read $length of payload
-
-			rx := conn
-			header := make([]byte, 5)
-			n, err := io.ReadFull(rx, header)
-
-			if (err != nil) || (n != len(header)) {
-				log.Println("tls record header err", err)
-			} else {
-				forwardTLS(conn, header)
-			}
+			forwardTLS(conn)
 		}
 	}()
 	wg.Wait()
@@ -151,7 +134,29 @@ func forwardHTTP(conn net.Conn) {
 	}()
 }
 
-func forwardTLS(conn net.Conn, header []byte) {
+func forwardTLS(conn net.Conn) {
+	// TLS record
+	// contentType    1 byte
+	// major, minor   2 bytes
+	// length         2 bytes
+	// payload
+
+	// read 5 bytes
+	// read $length of payload
+	rx := conn
+	header := make([]byte, 5)
+	{
+		n, err := io.ReadFull(rx, header)
+
+		if (err != nil) || (n != len(header)) {
+			log.Println("tls record header err", err)
+			conn.Close()
+			return
+		}
+	}
+
+
+
 	var host string
 	// header[0] == 22 // Handshake
 	// header[1]
@@ -173,7 +178,6 @@ func forwardTLS(conn net.Conn, header []byte) {
 		conn.Close()
 		return
 	}
-	rx := conn
 	payload := make([]byte, n)
 	n2, err := io.ReadFull(rx, payload)
 	if (err != nil) || (n2 != n) {
