@@ -49,10 +49,12 @@ func main() {
 			default_cert = cert
 		}
 	}
+	_ = default_cert
 	tlsConfig := &tls.Config{
 		GetCertificate: nil,
 		NameToCertificate: mapCert,
-		Certificates: []tls.Certificate{default_cert},
+		//Certificates: []tls.Certificate{default_cert},
+		Certificates: []tls.Certificate{},
 	}
 	tlsServer = &http.Server{
 		Addr: ":443",
