@@ -10,20 +10,28 @@ import (
 	"regexp"
 	"io/ioutil"
 	"sync"
+	"fmt"
 	//"encoding/hex" //Dump
 )
 
-var forwardTable map[string]map[string]string
+//var forwardTable map[string]map[string]string
+var forwardTable interface{}
+var config map[string]interface{}
 
 func main() {
-	content, err := ioutil.ReadFile("forwardtable.yaml")
+	content, err := ioutil.ReadFile("config.yaml")
 	if err != nil {
-		log.Fatalln("cannot read forwardtable")
+		log.Fatalln("cannot read config")
 	}
-	yaml.Unmarshal(content, &forwardTable)
+	yaml.Unmarshal(content, &config)
+	//forwardTable = map[string]interface{}(config["forwardtable"].(map[interface{}]interface{}))
+	forwardTable = config["forwardtable"]
+	port := config["port"]
+	porttls := config["porttls"]
+	log.Printf("%t\n%#v\n", port, porttls)
 
 	log.Println("multiplexer starting...")
-	addr80, err := net.ResolveTCPAddr("tcp", ":8081")
+	addr80, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalln("net.resolve", err)
 	}
@@ -32,7 +40,7 @@ func main() {
 		log.Fatalln("net.Listen", err)
 	}
 
-	addr443, err := net.ResolveTCPAddr("tcp", ":8443")
+	addr443, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", porttls))
 	if err != nil {
 		log.Fatalln("net.resolve", err)
 	}
@@ -96,13 +104,16 @@ func main() {
 }
 
 func getForward(scheme, orig string) string {
-	for pattern, upstream := range forwardTable[scheme] {
-		matched, err := regexp.MatchString(pattern, orig)
+	for pattern, upstream := range forwardTable.(map[interface{}]interface{})[scheme].(map[interface{}]interface{}) {
+		if pattern == "default" {
+			continue
+		}
+		matched, err := regexp.MatchString(pattern.(string), orig)
 		if (err == nil) && matched {
-			return upstream
+			return upstream.(string)
 		}
 	}
-	return forwardTable[scheme]["default"]
+	return forwardTable.(map[interface{}]interface{})[scheme].(map[interface{}]interface{})["default"].(string)
 }
 
 func forwardHTTP(conn net.Conn, req *http.Request) {
