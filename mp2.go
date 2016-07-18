@@ -10,6 +10,7 @@ import (
 	"os"
 	"fmt"
 	"errors"
+	"io"
 )
 
 var config map[string]interface{}
@@ -80,7 +81,7 @@ func main() {
 	acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
 	acmeHandler = http.FileServer(http.Dir("/dev/shm"))
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
-	plainServer.Handler.(*http.ServeMux).Handle("/.well-known", acmeHandler)
+	plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 	go func() {
 		log.Println("herex")
@@ -132,7 +133,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		port = config["forwardtable"].(map[interface{}]interface{})["https"].(map[interface{}]interface{})["default"].(int)
 	}
 
-	host = fmt.Sprintf("localhost:%d", port)
+	host = fmt.Sprintf("%s:%d", host, port)
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
 	newURL.Host = host
@@ -140,10 +141,18 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Host = host
 	req.URL = newURL
 	client := &http.Client{}
+	// unset it
+	req.RequestURI = ""
 	resp, err := client.Do(req)
 	log.Println(resp)
 	if err != nil {
+		log.Println(err)
 		return
 	}
-	resp.Write(w)
+	for key, value := range resp.Header {
+		w.Header()[key] = value
+	}
+	w.WriteHeader(resp.StatusCode)
+	//resp.Write(w)
+	io.Copy(w, resp.Body)
 }
