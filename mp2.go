@@ -85,10 +85,12 @@ func main() {
 	}
 
 	//log.Println("here2")
-	acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
+	//acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
+
 	//acmeHandler = http.FileServer(http.Dir("/dev/shm"))
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
-	plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
+	//plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
+	plainServer.Handler.(*http.ServeMux).HandleFunc("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 	go func() {
 		//log.Println("herex")
@@ -108,7 +110,19 @@ func main() {
 }
 
 
+func logRequest(req *http.Request) {
+	log.Printf("%T <%s> \"%v\" %s <%s> %v %v %s %v\n", req, req.RemoteAddr, req.URL, req.Proto, req.Host, req.Header, req.Form, req.RequestURI, req.TLS)
+}
+
+func acmeHandler(w http.ResponseWriter, req *http.Request) {
+	logRequest(req)
+	filename := config["acmedir"].(string) + "/" + req.URL.Path
+	log.Println("servefile", filename)
+	http.ServeFile(w, req, filename)
+}
+
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
+	logRequest(req)
 	var host string
 	if (req.Host != "") {
 		host = req.Host
@@ -126,6 +140,7 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func forwardHandler(w http.ResponseWriter, req *http.Request) {
+	logRequest(req)
 	var host string
 	if (req.Host != "") {
 		host = req.Host
