@@ -141,6 +141,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.URL = newURL
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	log.Println(resp)
 	if err != nil {
 		return
 	}
