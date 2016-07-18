@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"fmt"
+	"errors"
 )
 
 var config map[string]interface{}
@@ -51,10 +52,19 @@ func main() {
 	}
 	_ = default_cert
 	tlsConfig := &tls.Config{
-		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) { return nil,nil},
+		//GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) { return nil,nil},
+		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			sn := clientHello.ServerName
+			if sn != "" {
+				return mapCert[sn], nil
+			} else {
+				return nil, errors.New("not found")
+			}
+		},
 		NameToCertificate: mapCert,
 		//Certificates: []tls.Certificate{default_cert},
-		Certificates: []tls.Certificate{},
+		//Certificates: []tls.Certificate{},
+		Certificates: nil,
 	}
 	tlsServer = &http.Server{
 		Addr: ":443",
