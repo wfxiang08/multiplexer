@@ -51,7 +51,7 @@ func main() {
 	}
 	_ = default_cert
 	tlsConfig := &tls.Config{
-		GetCertificate: nil,
+		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) { return nil,nil},
 		NameToCertificate: mapCert,
 		//Certificates: []tls.Certificate{default_cert},
 		Certificates: []tls.Certificate{},
