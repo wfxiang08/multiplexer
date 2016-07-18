@@ -79,7 +79,7 @@ func main() {
 
 	log.Println("here2")
 	acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
-	acmeHandler = http.FileServer(http.Dir("/dev/shm"))
+	//acmeHandler = http.FileServer(http.Dir("/dev/shm"))
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
 	plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
