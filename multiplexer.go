@@ -6,9 +6,20 @@ import (
 	"bufio"
 	"net/http"
 	"io"
+	"gopkg.in/yaml.v2"
+	"regexp"
+	"io/ioutil"
 )
 
+var forwardTable map[string]map[string]string
+
 func main() {
+	content, err := ioutil.ReadFile("forwardtable.yaml")
+	if err != nil {
+		log.Fatalln("cannot read forwardtable")
+	}
+	yaml.Unmarshal(content, &forwardTable)
+
 	log.Println("multiplexer starting...")
 	addr80, err := net.ResolveTCPAddr("tcp", ":8080")
 	if err != nil {
@@ -34,6 +45,16 @@ func main() {
 	}
 }
 
+func getForward(scheme, orig string) string {
+	for pattern, upstream := range forwardTable[scheme] {
+		matched, err := regexp.MatchString(pattern, orig)
+		if (err == nil) && matched {
+			return upstream
+		}
+	}
+	return forwardTable[scheme]["default"]
+}
+
 func forwardHTTP(conn net.Conn, req *http.Request) {
 	log.Println(req)
 	var host string
@@ -43,12 +64,14 @@ func forwardHTTP(conn net.Conn, req *http.Request) {
 		host = req.URL.Host
 	}
 	log.Println("host is ", host)
-	upstream, err := net.Dial("tcp", "localhost:80")
+	upstreamAddr := getForward("http", host)
+	upstream, err := net.Dial("tcp", upstreamAddr)
 	if err != nil {
 		log.Println("upstream offline", err)
 		conn.Close()
 		return
 	}
+	// FIXME modify request?
 	req.Write(upstream)
 	go func() {
 		defer upstream.Close()
