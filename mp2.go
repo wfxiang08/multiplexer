@@ -15,6 +15,7 @@ import (
 
 var config map[string]interface{}
 var LOG_FILE = "mp2.log"
+var portPattern = regexp.MustCompile(":\\d+$")
 
 func main() {
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
@@ -128,7 +129,6 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		host = req.URL.Host
 	}
-	portPattern, _ := regexp.Compile(":\\d+$")
 	host = portPattern.ReplaceAllString(host, "")
 
 	newURL, _ := req.URL.Parse("")
@@ -146,7 +146,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		host = req.URL.Host
 	}
-	portPattern, _ := regexp.Compile(":\\d+$")
 	host = portPattern.ReplaceAllString(host, "")
 
 	port, ok := config["forwardtable"].(map[interface{}]interface{})["https"].(map[interface{}]interface{})[host].(int)
