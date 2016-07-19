@@ -2,16 +2,16 @@
 package main
 
 import (
-	"net"
-	"log"
 	"bufio"
-	"net/http"
-	"io"
-	"gopkg.in/yaml.v2"
-	"regexp"
-	"io/ioutil"
-	"sync"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
+	"regexp"
+	"sync"
 	//"encoding/hex" //Dump
 	"strings"
 )
@@ -158,7 +158,7 @@ func convertHTTPtoTLS(conn net.Conn) {
 	}
 	log.Println("host is ", host)
 
-	host_replace := strings.Replace(host, fmt.Sprintf(":%d",port), fmt.Sprintf(":%d",porttls), -1)
+	host_replace := strings.Replace(host, fmt.Sprintf(":%d", port), fmt.Sprintf(":%d", porttls), -1)
 
 	//req.URL.Host = host
 	//req.URL.Scheme = "https"
@@ -211,8 +211,6 @@ func forwardTLS(conn net.Conn) {
 		}
 	}
 
-
-
 	var host string
 	// header[0] == 22 // Handshake
 	// header[1]
@@ -229,7 +227,7 @@ func forwardTLS(conn net.Conn) {
 		conn.Close()
 		return
 	}
-	if n > 16384 + 2048 {
+	if n > 16384+2048 {
 		// too large FIXME shutdown
 		conn.Close()
 		return
@@ -264,7 +262,7 @@ func forwardTLS(conn net.Conn) {
 	//log.Println("n_sid", n_sid)
 	offset_cipher := offset_sid + 1 + n_sid
 	//log.Println("offset_cipher", offset_cipher)
-	n_cipher := int(payload[offset_cipher]) << 8 | int(payload[offset_cipher+1])
+	n_cipher := int(payload[offset_cipher])<<8 | int(payload[offset_cipher+1])
 	offset_comp := offset_cipher + 2 + n_cipher
 	n_comp := int(payload[offset_comp])
 	offset_ext := offset_comp + 1 + n_comp
@@ -282,15 +280,15 @@ func forwardTLS(conn net.Conn) {
 			n_servername_list := int(payload[offset_now])<<8 | int(payload[offset_now+1])
 			// [ 1b 2b +len ]  servername type, servername len, servername
 			offset_now += 2
-			for offset_now < offset_current + 4 + n_servername_list {
+			for offset_now < offset_current+4+n_servername_list {
 				typ_servername := int(payload[offset_now])
 				n_servername := int(payload[offset_now+1])<<8 | int(payload[offset_now+2])
-				servername := payload[offset_now+3:offset_now+3+n_servername]
+				servername := payload[offset_now+3 : offset_now+3+n_servername]
 				log.Println("SNI", typ_servername, string(servername))
 				if typ_servername == 0 {
 					host = string(servername)
 				}
-				offset_now += 3+n_servername
+				offset_now += 3 + n_servername
 			}
 		}
 		offset_current += 4 + n_current
@@ -330,8 +328,8 @@ func decodeInt16(payload []byte) int {
 }
 
 func encodeInt16(payload []byte, n int) {
-	payload[0] = byte(n>>8)
-	payload[1] = byte(n%256)
+	payload[0] = byte(n >> 8)
+	payload[1] = byte(n % 256)
 }
 
 func decodeInt24(payload []byte) int {
@@ -340,21 +338,21 @@ func decodeInt24(payload []byte) int {
 }
 
 func encodeInt24(payload []byte, n int) {
-	payload[0] = byte(n>>16)
-	payload[1] = byte((n>>8)%256)
-	payload[2] = byte(n%256)
+	payload[0] = byte(n >> 16)
+	payload[1] = byte((n >> 8) % 256)
+	payload[2] = byte(n % 256)
 }
 
 var htmlReplacer = strings.NewReplacer(
-    "&", "&amp;",
-    "<", "&lt;",
-    ">", "&gt;",
-    // "&#34;" is shorter than "&quot;".
-    `"`, "&#34;",
-    // "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
-    "'", "&#39;",
+	"&", "&amp;",
+	"<", "&lt;",
+	">", "&gt;",
+	// "&#34;" is shorter than "&quot;".
+	`"`, "&#34;",
+	// "&#39;" is shorter than "&apos;" and apos was not in HTML until HTML5.
+	"'", "&#39;",
 )
 
 func htmlEscape(s string) string {
-    return htmlReplacer.Replace(s)
+	return htmlReplacer.Replace(s)
 }

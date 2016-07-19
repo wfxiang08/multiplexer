@@ -1,16 +1,16 @@
 package main
 
 import (
-	"net/http"
-	"regexp"
-	"gopkg.in/yaml.v2"
 	"crypto/tls"
+	"errors"
+	"fmt"
+	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
-	"fmt"
-	"errors"
-	"io"
+	"regexp"
 )
 
 var config map[string]interface{}
@@ -75,12 +75,12 @@ func main() {
 		Certificates: nil,
 	}
 	tlsServer = &http.Server{
-		Addr: ":443",
+		Addr:      ":443",
 		TLSConfig: tlsConfig,
-		Handler: http.NewServeMux(),
+		Handler:   http.NewServeMux(),
 	}
 	plainServer = &http.Server{
-		Addr: ":80",
+		Addr:    ":80",
 		Handler: http.NewServeMux(),
 	}
 
@@ -109,7 +109,6 @@ func main() {
 	}
 }
 
-
 func logRequest(req *http.Request) {
 	log.Printf("%T <%s> \"%v\" %s <%s> %v %v %s %v\n", req, req.RemoteAddr, req.URL, req.Proto, req.Host, req.Header, req.Form, req.RequestURI, req.TLS)
 }
@@ -124,7 +123,7 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	var host string
-	if (req.Host != "") {
+	if req.Host != "" {
 		host = req.Host
 	} else {
 		host = req.URL.Host
@@ -136,13 +135,13 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Host = host
 	newURL.Scheme = "https"
 
-    http.Redirect(w, req, newURL.String(), http.StatusMovedPermanently)
+	http.Redirect(w, req, newURL.String(), http.StatusMovedPermanently)
 }
 
 func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	var host string
-	if (req.Host != "") {
+	if req.Host != "" {
 		host = req.Host
 	} else {
 		host = req.URL.Host
