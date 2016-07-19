@@ -11,3 +11,8 @@ test:
 
 setcap:
 	sudo setcap cap_net_bind_service=ep mp2
+
+linksys:
+	mkdir -p src
+	#ln -s /usr/share/gocode/src/github.com src/ || true
+	ln -s /usr/share/gocode/src/gopkg.in   src/ || true
