@@ -20,12 +20,12 @@ var portPattern = regexp.MustCompile(":\\d+$")
 func main() {
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalln(err, "logfile")
+		log.Fatalln(err, "cannot open logfile")
 	}
 	log.SetOutput(fh)
 	content, err := ioutil.ReadFile("config2.yaml")
 	if err != nil {
-		log.Fatalln("cannot read config")
+		log.Fatalln(err, "cannot read config")
 	}
 	yaml.Unmarshal(content, &config)
 
@@ -35,11 +35,11 @@ func main() {
 	dir, err := os.Open(certdir)
 	defer dir.Close()
 	if err != nil {
-		log.Fatal(certdir, err)
+		log.Fatal("cannot open certdir", certdir, err)
 	}
 	fi, err := dir.Readdir(0)
 	if err != nil {
-		log.Fatal("readdir", err)
+		log.Fatal("cannot readdir", err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
 	defaultHost := config["default_host"]
@@ -51,7 +51,9 @@ func main() {
 		certFile := certdir + "/" + hostname + "/fullchain.pem"
 		keyFile := certdir + "/" + hostname + "/privkey.pem"
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		_ = err
+		if err != nil {
+			log.Fatal(err, "load cert failed", certFile)
+		}
 		mapCert[hostname] = &cert
 		if hostname == defaultHost {
 			default_certFile = certFile
@@ -65,10 +67,12 @@ func main() {
 		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 			sn := clientHello.ServerName
 			if sn != "" {
-				return mapCert[sn], nil
-			} else {
-				return nil, errors.New("<" + sn + "> not found")
+				cert, ok := mapCert[sn]
+				if ok {
+					return cert, nil
+				}
 			}
+			return nil, errors.New("<" + sn + "> not found")
 		},
 		NameToCertificate: mapCert,
 		//Certificates: []tls.Certificate{default_cert},
@@ -100,13 +104,13 @@ func main() {
 		_ = default_keyFile
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("tlsServer", err)
 		}
 	}()
 	//log.Println("here3")
 	err = plainServer.ListenAndServe()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("plainServer", err)
 	}
 }
 
@@ -172,7 +176,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	resp, err := client.Do(req)
 	log.Println(resp)
 	if err != nil {
-		log.Println(err)
+		log.Println("client.Do err", err)
 		return
 	}
 	for key, value := range resp.Header {
@@ -186,7 +190,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//resp.Write(w)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		log.Println(err)
+		log.Println("io.Copy err", err)
 	}
 	resp.Body.Close()
 }
