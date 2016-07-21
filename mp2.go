@@ -163,6 +163,12 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	client := &http.Client{}
 	// unset it
 	req.RequestURI = ""
+	// unset Connection
+	_, ok = req.Header["Connection"]
+	// drop "Connection"
+	if ok {
+		delete(req.Header, "Connection")
+	}
 	resp, err := client.Do(req)
 	log.Println(resp)
 	if err != nil {
