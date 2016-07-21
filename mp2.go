@@ -174,7 +174,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		delete(req.Header, "Connection")
 	}
 	resp, err := client.Do(req)
-	log.Println(resp)
+	//log.Println(resp)
 	if err != nil {
 		log.Println("client.Do err", err)
 		return
