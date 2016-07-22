@@ -1,4 +1,4 @@
-all: multiplexer mp2
+all: mp2
 
 %: %.go
 	source ./go_env.sh; \
