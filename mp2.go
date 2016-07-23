@@ -29,6 +29,7 @@ func main() {
 		log.Fatalln("cannot read config:", err)
 	}
 	yaml.Unmarshal(content, &config)
+	log.Println(config["forwardtable"])
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
@@ -144,9 +145,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	host = portPattern.ReplaceAllString(host, "")
 
-	port, ok := config["forwardtable"].(map[interface{}]interface{})["https"].(map[interface{}]interface{})[host].(int)
+	port, ok := config["forwardtable"].(map[interface{}]interface{})[host].(int)
 	if !ok {
-		port = config["forwardtable"].(map[interface{}]interface{})["https"].(map[interface{}]interface{})["default"].(int)
+		port = config["forwardtable"].(map[interface{}]interface{})["default"].(int)
 	}
 
 	host = fmt.Sprintf("%s:%d", host, port)

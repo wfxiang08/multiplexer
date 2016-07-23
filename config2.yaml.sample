@@ -1,9 +1,6 @@
 forwardtable:
-  http:
-    default: 80
-  https:
-    default: 8443
-    "google.com": 8080
+  default: 8443
+  "some.virtual.host": 8080
 
 # port and address to listen on
 plain_port: 80
