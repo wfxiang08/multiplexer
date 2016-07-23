@@ -4,6 +4,7 @@ package main
 import (
 	"crypto/tls"
 	"errors"
+	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -14,17 +15,20 @@ import (
 	"regexp"
 )
 
+var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
+
 var config map[string]interface{}
 var LOG_FILE = "mp2.log"
 var portPattern = regexp.MustCompile(":\\d+$")
 
 func main() {
+	flag.Parse()
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalln("cannot open logfile:", err)
 	}
 	log.SetOutput(fh)
-	content, err := ioutil.ReadFile("config2.yaml")
+	content, err := ioutil.ReadFile(*configFile)
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
