@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"time"
 )
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
@@ -21,7 +22,16 @@ var config map[string]interface{}
 var LOG_FILE = "mp2.log"
 var portPattern = regexp.MustCompile(":\\d+$")
 
-var httpClient = &http.Client{}
+//var httpClient = &http.Client{}
+// for local test
+var httpClient = &http.Client{
+	Timeout: 20 * time.Second,
+	Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: false,
+		},
+	},
+}
 
 func main() {
 	flag.Parse()
@@ -82,7 +92,7 @@ func main() {
 			return nil, errors.New("<" + sn + "> not found")
 		},
 		NameToCertificate: mapCert,
-		Certificates: nil,
+		Certificates:      nil,
 	}
 	tlsServer = &http.Server{
 		Addr:      fmt.Sprintf("%s:%d", listenAddr, tlsPort),
