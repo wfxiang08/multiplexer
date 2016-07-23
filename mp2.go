@@ -24,7 +24,6 @@ var portPattern = regexp.MustCompile(":\\d+$")
 func main() {
 	flag.Parse()
 
-
 	content, err := ioutil.ReadFile(*configFile)
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
