@@ -1,12 +1,18 @@
-acmedir: "webroot"
-certdir: "live"
 forwardtable:
   http:
     default: 80
   https:
     default: 8443
     "google.com": 8080
+# default hostname
 default_host: localhost.localdomain
+
+# port and address to listen on
 plain_port: 80
 tls_port: 443
 listen: ""
+
+# for letsencrypt SimpleHttp/http-01 challenge
+acmedir: "webroot"
+# letsencrypt certificate dir
+certdir: "live"
