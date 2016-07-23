@@ -1,3 +1,4 @@
+// only suport client with SNI
 package main
 
 import (
