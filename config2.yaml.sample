@@ -4,8 +4,6 @@ forwardtable:
   https:
     default: 8443
     "google.com": 8080
-# default hostname
-default_host: localhost.localdomain
 
 # port and address to listen on
 plain_port: 80

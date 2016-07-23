@@ -42,12 +42,9 @@ func main() {
 		log.Fatal("cannot readdir:", err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
-	defaultHost := config["default_host"]
 	plainPort := config["plain_port"]
 	tlsPort := config["tls_port"]
 	listenAddr := config["listen"]
-	var default_certFile, default_keyFile string
-	var default_cert tls.Certificate
 	for _, subdir := range fi {
 		//log.Println("here")
 		hostname := subdir.Name()
@@ -58,13 +55,7 @@ func main() {
 			log.Fatal("load cert failed", certFile, err)
 		}
 		mapCert[hostname] = &cert
-		if hostname == defaultHost {
-			default_certFile = certFile
-			default_keyFile = keyFile
-			default_cert = cert
-		}
 	}
-	_ = default_cert
 	tlsConfig := &tls.Config{
 		//GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) { return nil,nil},
 		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -78,7 +69,6 @@ func main() {
 			return nil, errors.New("<" + sn + "> not found")
 		},
 		NameToCertificate: mapCert,
-		//Certificates: []tls.Certificate{default_cert},
 		//Certificates: []tls.Certificate{},
 		Certificates: nil,
 	}
@@ -103,8 +93,6 @@ func main() {
 	go func() {
 		//log.Println("herex")
 		//err := tlsServer.ListenAndServeTLS(default_certFile, default_keyFile)
-		_ = default_certFile
-		_ = default_keyFile
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
 			log.Fatalln("tlsServer error:", err)
