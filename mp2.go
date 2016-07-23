@@ -21,6 +21,8 @@ var config map[string]interface{}
 var LOG_FILE = "mp2.log"
 var portPattern = regexp.MustCompile(":\\d+$")
 
+var httpClient = &http.Client{}
+
 func main() {
 	flag.Parse()
 
@@ -157,7 +159,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 
 	req.Host = host
 	req.URL = newURL
-	client := &http.Client{}
+	//client := &http.Client{}
+	// reuse
+	client := httpClient
 	// unset it
 	req.RequestURI = ""
 	// unset Connection
