@@ -20,12 +20,12 @@ var portPattern = regexp.MustCompile(":\\d+$")
 func main() {
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalln(err, "cannot open logfile")
+		log.Fatalln("cannot open logfile:", err)
 	}
 	log.SetOutput(fh)
 	content, err := ioutil.ReadFile("config2.yaml")
 	if err != nil {
-		log.Fatalln(err, "cannot read config")
+		log.Fatalln("cannot read config:", err)
 	}
 	yaml.Unmarshal(content, &config)
 
@@ -35,11 +35,11 @@ func main() {
 	dir, err := os.Open(certdir)
 	defer dir.Close()
 	if err != nil {
-		log.Fatal("cannot open certdir", certdir, err)
+		log.Fatal("cannot open certdir:", certdir, err)
 	}
 	fi, err := dir.Readdir(0)
 	if err != nil {
-		log.Fatal("cannot readdir", err)
+		log.Fatal("cannot readdir:", err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
 	defaultHost := config["default_host"]
@@ -52,7 +52,7 @@ func main() {
 		keyFile := certdir + "/" + hostname + "/privkey.pem"
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
-			log.Fatal(err, "load cert failed", certFile)
+			log.Fatal("load cert failed", certFile, err)
 		}
 		mapCert[hostname] = &cert
 		if hostname == defaultHost {
@@ -104,13 +104,13 @@ func main() {
 		_ = default_keyFile
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
-			log.Fatal("tlsServer", err)
+			log.Fatalln("tlsServer error:", err)
 		}
 	}()
 	//log.Println("here3")
 	err = plainServer.ListenAndServe()
 	if err != nil {
-		log.Fatal("plainServer", err)
+		log.Fatalln("plainServer error:", err)
 	}
 }
 
@@ -176,7 +176,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	resp, err := client.Do(req)
 	//log.Println(resp)
 	if err != nil {
-		log.Println("client.Do err", err)
+		log.Println("client.Do err:", err)
 		return
 	}
 	for key, value := range resp.Header {
@@ -190,7 +190,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//resp.Write(w)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
-		log.Println("io.Copy err", err)
+		log.Println("io.Copy err:", err)
 	}
 	resp.Body.Close()
 }
