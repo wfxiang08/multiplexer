@@ -11,3 +11,5 @@ listen: ""
 acmedir: "webroot"
 # letsencrypt certificate dir
 certdir: "live"
+
+logfile: mp0.log

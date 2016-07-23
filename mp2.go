@@ -23,16 +23,24 @@ var portPattern = regexp.MustCompile(":\\d+$")
 
 func main() {
 	flag.Parse()
-	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatalln("cannot open logfile:", err)
-	}
-	log.SetOutput(fh)
+
+
 	content, err := ioutil.ReadFile(*configFile)
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
 	yaml.Unmarshal(content, &config)
+
+	if _, ok := config["logfile"]; ok {
+		LOG_FILE = config["logfile"].(string)
+	}
+
+	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatalln("cannot open logfile:", err)
+	}
+	log.SetOutput(fh)
+
 	log.Println(config["forwardtable"])
 
 	var plainServer *http.Server
