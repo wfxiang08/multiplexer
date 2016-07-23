@@ -59,7 +59,6 @@ func main() {
 	tlsPort := config["tls_port"]
 	listenAddr := config["listen"]
 	for _, subdir := range fi {
-		//log.Println("here")
 		hostname := subdir.Name()
 		certFile := certdir + "/" + hostname + "/fullchain.pem"
 		keyFile := certdir + "/" + hostname + "/privkey.pem"
@@ -70,7 +69,6 @@ func main() {
 		mapCert[hostname] = &cert
 	}
 	tlsConfig := &tls.Config{
-		//GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) { return nil,nil},
 		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
 			sn := clientHello.ServerName
 			if sn != "" {
@@ -82,7 +80,6 @@ func main() {
 			return nil, errors.New("<" + sn + "> not found")
 		},
 		NameToCertificate: mapCert,
-		//Certificates: []tls.Certificate{},
 		Certificates: nil,
 	}
 	tlsServer = &http.Server{
@@ -95,23 +92,15 @@ func main() {
 		Handler: http.NewServeMux(),
 	}
 
-	//log.Println("here2")
-	//acmeHandler := http.FileServer(http.Dir(config["acmedir"].(string)))
-
-	//acmeHandler = http.FileServer(http.Dir("/dev/shm"))
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
-	//plainServer.Handler.(*http.ServeMux).Handle("/.well-known/", acmeHandler)
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 	go func() {
-		//log.Println("herex")
-		//err := tlsServer.ListenAndServeTLS(default_certFile, default_keyFile)
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
 			log.Fatalln("tlsServer error:", err)
 		}
 	}()
-	//log.Println("here3")
 	err = plainServer.ListenAndServe()
 	if err != nil {
 		log.Fatalln("plainServer error:", err)
@@ -191,7 +180,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		w.Header()[key] = value
 	}
 	w.WriteHeader(resp.StatusCode)
-	//resp.Write(w)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
 		log.Println("io.Copy err:", err)
