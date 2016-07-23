@@ -7,3 +7,6 @@ forwardtable:
     default: 8443
     "google.com": 8080
 default_host: localhost.localdomain
+plain_port: 80
+tls_port: 443
+listen: ""

@@ -43,6 +43,9 @@ func main() {
 	}
 	mapCert := make(map[string]*tls.Certificate)
 	defaultHost := config["default_host"]
+	plainPort := config["plain_port"]
+	tlsPort := config["tls_port"]
+	listenAddr := config["listen"]
 	var default_certFile, default_keyFile string
 	var default_cert tls.Certificate
 	for _, subdir := range fi {
@@ -80,12 +83,12 @@ func main() {
 		Certificates: nil,
 	}
 	tlsServer = &http.Server{
-		Addr:      ":443",
+		Addr:      fmt.Sprintf("%s:%d", listenAddr, tlsPort),
 		TLSConfig: tlsConfig,
 		Handler:   http.NewServeMux(),
 	}
 	plainServer = &http.Server{
-		Addr:    ":80",
+		Addr:    fmt.Sprintf("%s:%d", listenAddr, plainPort),
 		Handler: http.NewServeMux(),
 	}
 
