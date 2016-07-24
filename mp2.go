@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -27,6 +28,14 @@ var portPattern = regexp.MustCompile(":\\d+$")
 var httpClient = &http.Client{
 	Timeout: 20 * time.Second,
 	Transport: &http.Transport{
+		Proxy: nil,
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		DialTLS:               nil,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
 		},
