@@ -1,6 +1,11 @@
 forwardtable:
-  default: 8443
-  "some.virtual.host": 8080
+  default:
+    port: 8443
+  "some.virtual.host":
+    port: 8080
+  shorthost:
+    port: 8080
+    host: "longhost"
 
 # port and address to listen on
 plain_port: 80

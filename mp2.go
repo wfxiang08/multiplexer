@@ -166,17 +166,26 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	host = portPattern.ReplaceAllString(host, "")
 
-	port, ok := config["forwardtable"].(map[interface{}]interface{})[host].(int)
+	pair, ok := config["forwardtable"].(map[interface{}]interface{})[host]
 	if !ok {
-		port = config["forwardtable"].(map[interface{}]interface{})["default"].(int)
+		pair = config["forwardtable"].(map[interface{}]interface{})["default"]
 	}
 
-	host = fmt.Sprintf("%s:%d", host, port)
+	pair_map := pair.(map[interface{}]interface{})
+	port := pair_map["port"].(int)
+
+	host_interface, ok := pair_map["host"]
+	if ok {
+		host = host_interface.(string)
+	}
+
+	hostport := fmt.Sprintf("%s:%d", host, port)
+
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
-	newURL.Host = host
+	newURL.Host = hostport
 
-	req.Host = host
+	req.Host = hostport
 	req.URL = newURL
 	//client := &http.Client{}
 	// reuse
