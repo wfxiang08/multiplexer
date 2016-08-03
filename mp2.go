@@ -132,7 +132,7 @@ func logRequest(req *http.Request) {
 	log.Printf("%T <%s> \"%v\" %s <%s> %v %v %s %v\n", req, req.RemoteAddr, req.URL, req.Proto, req.Host, req.Header, req.Form, req.RequestURI, req.TLS)
 }
 
-var acmeFilter = regexp.MustCompile("^/\\.well-knwon")
+var acmeFilter = regexp.MustCompile("^/\\.well-known")
 
 func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
