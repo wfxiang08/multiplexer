@@ -132,8 +132,14 @@ func logRequest(req *http.Request) {
 	log.Printf("%T <%s> \"%v\" %s <%s> %v %v %s %v\n", req, req.RemoteAddr, req.URL, req.Proto, req.Host, req.Header, req.Form, req.RequestURI, req.TLS)
 }
 
+var acmeFilter = regexp.MustCompile("^\\.well-knwon")
+
 func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
+	if !acmeFilter.MatchString(req.URL.Path) {
+		log.Println("bad req url path", req.URL.Path)
+		return
+	}
 	filename := config["acmedir"].(string) + "/" + req.URL.Path
 	log.Println("servefile", filename)
 	http.ServeFile(w, req, filename)
