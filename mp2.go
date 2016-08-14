@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"time"
 	"github.com/gorilla/websocket"
+	"sync"
 )
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
@@ -53,6 +54,12 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// share tls config with httpClient
+var websocketDialer = &websocket.Dialer{
+	Proxy: nil,
+	TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
+}
+
 func main() {
 	flag.Parse()
 
@@ -74,6 +81,7 @@ func main() {
 
 	if _, ok := config["skip_verify"]; ok && config["skip_verify"] != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
 	log.Println(config["forwardtable"])
@@ -213,6 +221,10 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	client := httpClient
 	// unset it
 	req.RequestURI = ""
+
+	// FIXME: all hop-by-hop headers
+	req.Header.Del("Accept-Encoding")
+	req.Header.Del("Proxy-Connection")
 	// unset Connection
 	// drop "Connection"
 	// FIXME case sensitive?
@@ -222,8 +234,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		websocketHandler(w, req, newURL)
 		return
 	}
-	req.Header.Del("Accept-Encoding")
-	req.Header.Del("Proxy-Connection")
 
 	resp, err := client.Do(req)
 	//log.Println(resp)
@@ -248,26 +258,91 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 
 
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
+	// force websocket-tls
+	newURL.Scheme = "wss"
+	log.Println("websocket upstream at", newURL.String())
+
+	// downstream
 	conn, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
-		log.Println(err)
+		log.Println("upgrade", err)
 		return
 	}
+	defer conn.Close()
 
-	//newURL.Scheme = "wss"
-	//log.Println("websocket upstream at", newURL.String())
-	//connUp, respUp, err := websocket.DefaultDialer.Dial(newURL.String, req)
-
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
+	req.Header.Del("Upgrade")
+	req.Header.Del("Connection")
+	req.Header.Del("Sec-WebSocket-Key")
+	req.Header.Del("Sec-WebSocket-Version")
+	req.Header.Del("Sec-WebSocket-Protocol")
+	// upstream
+	connUp, respUp, err := websocketDialer.Dial(newURL.String(), req.Header)
+	if err != nil {
+		log.Println("dial websocket:", err)
+		if err == websocket.ErrBadHandshake {
+			for key, value := range respUp.Header {
+				// filter headers
+				if key == "Connection" {
+					continue
+				}
+				w.Header()[key] = value
+			}
+			w.WriteHeader(respUp.StatusCode)
+			_, err = io.Copy(w, respUp.Body)
+			if err != nil {
+				log.Println("io.Copy err:", err)
+			}
+			respUp.Body.Close()
 		}
-		err = conn.WriteMessage(messageType, p)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+		return
 	}
+	defer connUp.Close()
+
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer log.Println("down->up done")
+		for {
+			messageType, p, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("t01", err)
+				connUp.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+				return
+			}
+			log.Println("down->up", string(p))
+			err = connUp.WriteMessage(messageType, p)
+			if err != nil {
+				log.Println("t02", err)
+				// FIXME
+				conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+				return
+			}
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer log.Println("up->down done")
+		for {
+			messageType, p, err := connUp.ReadMessage()
+			if err != nil {
+				log.Println("t03", err)
+				conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+				return
+			}
+			log.Println("up->down", string(p))
+			err = conn.WriteMessage(messageType, p)
+			if err != nil {
+				log.Println("t04", err)
+				// FIXME
+				connUp.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+				return
+			}
+		}
+	}()
+	wg.Wait()
+	log.Println("waitgroup finished")
 }
