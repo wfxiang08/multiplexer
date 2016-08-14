@@ -199,11 +199,11 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	// unset it
 	req.RequestURI = ""
 	// unset Connection
-	_, ok = req.Header["Connection"]
 	// drop "Connection"
-	if ok {
-		delete(req.Header, "Connection")
-	}
+	req.Header.Del("Connection")
+	req.Header.Del("Accept-Encoding")
+	req.Header.Del("Proxy-Connection")
+
 	resp, err := client.Do(req)
 	//log.Println(resp)
 	if err != nil {
