@@ -54,7 +54,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// share tls config with httpClient
+// FIXME share tls config with httpClient?
 var websocketDialer = &websocket.Dialer{
 	Proxy: nil,
 	TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
