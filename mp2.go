@@ -61,6 +61,10 @@ func main() {
 	}
 	log.SetOutput(fh)
 
+	if _, ok := config["skip_verify"]; ok && config["skip_verify"] != 0 {
+		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+	}
+
 	log.Println(config["forwardtable"])
 
 	var plainServer *http.Server

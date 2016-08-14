@@ -18,3 +18,5 @@ acmedir: "webroot"
 certdir: "live"
 
 logfile: mp0.log
+
+skip_verify: 0
