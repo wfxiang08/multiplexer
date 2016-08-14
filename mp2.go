@@ -12,9 +12,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
@@ -39,6 +41,15 @@ var httpClient = &http.Client{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
 		},
+	},
+}
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		// FIXME strip port and check
+		log.Println("Origin:", r.Header.Get("Origin"))
+		log.Println("Host:", r.Host)
+		return true
 	},
 }
 
@@ -204,7 +215,13 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.RequestURI = ""
 	// unset Connection
 	// drop "Connection"
-	req.Header.Del("Connection")
+	// FIXME case sensitive?
+	if req.Header.Get("Connection") != "Upgrade" {
+		req.Header.Del("Connection")
+	} else if req.Header.Get("Upgrade") == "websocket" {
+		websocketHandler(w, req, newURL)
+		return
+	}
 	req.Header.Del("Accept-Encoding")
 	req.Header.Del("Proxy-Connection")
 
@@ -227,4 +244,30 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("io.Copy err:", err)
 	}
 	resp.Body.Close()
+}
+
+
+func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
+	conn, err := upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	//newURL.Scheme = "wss"
+	//log.Println("websocket upstream at", newURL.String())
+	//connUp, respUp, err := websocket.DefaultDialer.Dial(newURL.String, req)
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		err = conn.WriteMessage(messageType, p)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
 }
