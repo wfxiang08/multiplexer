@@ -23,7 +23,9 @@ import (
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
 
 var config map[string]interface{}
+// logrotate?
 var LOG_FILE = "mp2.log"
+// FIXME use net.SplitHostPort
 var portPattern = regexp.MustCompile(":\\d+$")
 
 //var httpClient = &http.Client{}
