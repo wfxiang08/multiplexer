@@ -48,8 +48,8 @@ var httpClient = &http.Client{
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		// FIXME strip port and check
-		log.Println("Origin:", r.Header.Get("Origin"))
-		log.Println("Host:", r.Host)
+		log.Println("[DEBUG] Origin:", r.Header.Get("Origin"))
+		log.Println("[DEBUG] Host:", r.Host)
 		return true
 	},
 }
@@ -260,7 +260,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
 	// force websocket-tls
 	newURL.Scheme = "wss"
-	log.Println("websocket upstream at", newURL.String())
+	log.Println("[DEBUG] websocket upstream at", newURL.String())
 
 	// downstream
 	conn, err := upgrader.Upgrade(w, req, nil)
@@ -300,11 +300,11 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go websocketTunnel("down->up", wg, conn, connUp)
+	go websocketTunnel("[DEBUG] down->up", wg, conn, connUp)
 	wg.Add(1)
-	go websocketTunnel("up->down", wg, connUp, conn)
+	go websocketTunnel("[DEBUG] up->down", wg, connUp, conn)
 	wg.Wait()
-	log.Println("waitgroup finished")
+	log.Println("[DEBUG] waitgroup finished")
 }
 
 func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websocket.Conn) {
