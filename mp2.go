@@ -89,12 +89,10 @@ func main() {
 		log.Fatalln("cannot read config:", err)
 	}
 
-	// try yaml tags
 	err = yaml.Unmarshal(content, &config)
 	if err != nil {
 		log.Fatalln("yaml unmarshal", err)
 	}
-	log.Println(config)
 	log.Printf("%#v\n", config)
 
 	if config.LogFile != "" {
@@ -116,7 +114,7 @@ func main() {
 		logDebug = true
 	}
 
-	log.Println(config.ForwardTable)
+	log.Printf("Current config: %#v\n", config)
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
