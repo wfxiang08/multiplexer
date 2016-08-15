@@ -28,6 +28,7 @@ var config map[string]interface{}
 var LOG_FILE = "mp2.log"
 // FIXME use net.SplitHostPort
 var portPattern = regexp.MustCompile(":\\d+$")
+var logDebug = false
 
 //var httpClient = &http.Client{}
 // for local test
@@ -85,6 +86,10 @@ func main() {
 	if _, ok := config["skip_verify"]; ok && config["skip_verify"] != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
+	}
+
+	if _, ok := config["log_debug"]; ok && config["log_debug"] != 0 {
+		logDebug = true
 	}
 
 	log.Println(config["forwardtable"])
@@ -351,25 +356,31 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 
 func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websocket.Conn) {
 	defer wg.Done()
-	defer log.Println(logTag, "done")
+	defer debugLog(logTag, "done")
 	for {
 		messageType, p, err := connFrom.ReadMessage()
 		if err != nil {
-			log.Println(logTag, "t01", err)
+			debugLog(logTag, "t01", err)
 			connTo.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
 			return
 		}
 		if messageType == websocket.TextMessage {
-			log.Println(logTag, messageType, string(p))
+			debugLog(logTag, messageType, string(p))
 		} else {
-			log.Println(logTag, messageType, hex.Dump(p))
+			debugLog(logTag, messageType, hex.Dump(p))
 		}
 		err = connTo.WriteMessage(messageType, p)
 		if err != nil {
-			log.Println(logTag, "t02", err)
+			debugLog(logTag, "t02", err)
 			// FIXME
 			connFrom.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
 			return
 		}
+	}
+}
+
+func debugLog(v ...interface{}) {
+	if logDebug {
+		log.Println(v...)
 	}
 }

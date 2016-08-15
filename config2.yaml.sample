@@ -20,3 +20,4 @@ certdir: "live"
 logfile: mp0.log
 
 skip_verify: 0
+log_debug: 0
