@@ -110,11 +110,10 @@ func main() {
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
-	certdir := config.CertDir
-	dir, err := os.Open(certdir)
+	dir, err := os.Open(config.CertDir)
 	defer dir.Close()
 	if err != nil {
-		log.Fatal("cannot open certdir:", certdir, err)
+		log.Fatal("cannot open certdir:", config.CertDir, err)
 	}
 	fi, err := dir.Readdir(0)
 	if err != nil {
@@ -123,8 +122,8 @@ func main() {
 	mapCert := make(map[string]*tls.Certificate)
 	for _, subdir := range fi {
 		hostname := subdir.Name()
-		certFile := certdir + "/" + hostname + "/fullchain.pem"
-		keyFile := certdir + "/" + hostname + "/privkey.pem"
+		certFile := config.CertDir + "/" + hostname + "/fullchain.pem"
+		keyFile := config.CertDir + "/" + hostname + "/privkey.pem"
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
 			log.Fatal("load cert failed", certFile, err)
