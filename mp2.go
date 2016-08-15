@@ -23,7 +23,6 @@ import (
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
 
-//var config map[string]interface{}
 var config2 Config
 
 type ForwardTableEntry struct {
@@ -92,10 +91,6 @@ func main() {
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
-	//err = yaml.Unmarshal(content, &config)
-	//if err != nil {
-	//	log.Fatalln("yaml unmarshal", err)
-	//}
 
 	// try yaml tags
 	err = yaml.Unmarshal(content, &config2)
@@ -124,7 +119,6 @@ func main() {
 		logDebug = true
 	}
 
-	//log.Println(config["forwardtable"])
 	log.Println(config2.ForwardTable)
 
 	var plainServer *http.Server
@@ -140,9 +134,6 @@ func main() {
 		log.Fatal("cannot readdir:", err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
-	//plainPort := config["plain_port"]
-	//tlsPort := config["tls_port"]
-	//listenAddr := config["listen"]
 	for _, subdir := range fi {
 		hostname := subdir.Name()
 		certFile := certdir + "/" + hostname + "/fullchain.pem"
@@ -204,7 +195,6 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("bad req url path", req.URL.Path)
 		return
 	}
-	//filename := config["acmedir"].(string) + "/" + req.URL.Path
 	filename := config2.AcmeDir + "/" + req.URL.Path
 	log.Println("servefile", filename)
 	http.ServeFile(w, req, filename)
@@ -237,18 +227,13 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	host = portPattern.ReplaceAllString(host, "")
 
-	//pair, ok := config["forwardtable"].(map[interface{}]interface{})[host]
 	upstream, ok := config2.ForwardTable[host]
 	if !ok {
-		//pair = config["forwardtable"].(map[interface{}]interface{})["default"]
 		upstream = config2.ForwardTable["default"]
 	}
 
-	//pair_map := pair.(map[interface{}]interface{})
-	//port := pair_map["port"].(int)
 	port := upstream.Port
 
-	//host_interface, ok := pair_map["host"]
 	if upstream.Host != "" {
 		host = upstream.Host
 	}
