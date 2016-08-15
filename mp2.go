@@ -233,7 +233,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		upstream = config.ForwardTable["default"]
 	}
-
 	port := upstream.Port
 	if upstream.Host != "" {
 		host = upstream.Host
@@ -283,8 +282,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Header.Del("X-Forwarded-Proto")
 	req.Header.Set("X-Forwarded-Proto", "https")
 
-	// unset Connection
-	// drop "Connection"
 	// FIXME case sensitive?
 	if req.Header.Get("Connection") != "Upgrade" {
 		req.Header.Del("Connection")
@@ -302,17 +299,18 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//log.Println(resp)
 	if err != nil {
 		log.Println("client.Do err:", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	// copy and filter headers
 	for key, value := range resp.Header {
-		// filter headers
 		if key == "Connection" {
 			continue
 		}
 		w.Header()[key] = value
 	}
+	// FIXME process trailers?
 	if len(resp.Trailer) > 0 {
-		// FIXME
 		log.Println("response has trailer?")
 	}
 	w.WriteHeader(resp.StatusCode)
@@ -359,6 +357,8 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 				log.Println("io.Copy err:", err)
 			}
 			respUp.Body.Close()
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 		return
 	}
