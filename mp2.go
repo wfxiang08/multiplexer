@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"flag"
-	"fmt"
+	//"fmt"
 	"github.com/gorilla/websocket"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -26,14 +26,14 @@ var configFile = flag.String("config", "config2.yaml", "path to config file, def
 var config Config
 
 type Target struct {
-	Port int    `yaml:"port"`
+	Port string `yaml:"port"`
 	Host string `yaml:"host"`
 }
 
 type Config struct {
 	ForwardTable map[string]Target `yaml:"forwardtable"`
-	PlainPort    int               `yaml:"plain_port"`
-	TlsPort      int               `yaml:"tls_port"`
+	PlainPort    string            `yaml:"plain_port"`
+	TlsPort      string            `yaml:"tls_port"`
 	ListenAddr   string            `yaml:"listen"`
 	AcmeDir      string            `yaml:"acmedir"`
 	CertDir      string            `yaml:"certdir"`
@@ -45,8 +45,6 @@ type Config struct {
 // logrotate?
 var LOG_FILE = "mp2.log"
 
-// FIXME use net.SplitHostPort
-var portPattern = regexp.MustCompile(":\\d+$")
 var logDebug = false
 
 var httpClient = &http.Client{
@@ -154,12 +152,12 @@ func main() {
 		Certificates:      nil,
 	}
 	tlsServer = &http.Server{
-		Addr:      fmt.Sprintf("%s:%d", config.ListenAddr, config.TlsPort),
+		Addr:      net.JoinHostPort(config.ListenAddr, config.TlsPort),
 		TLSConfig: tlsConfig,
 		Handler:   http.NewServeMux(),
 	}
 	plainServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", config.ListenAddr, config.PlainPort),
+		Addr:    net.JoinHostPort(config.ListenAddr, config.PlainPort),
 		Handler: http.NewServeMux(),
 	}
 
@@ -203,7 +201,11 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		host = req.URL.Host
 	}
-	host = portPattern.ReplaceAllString(host, "")
+	host, _, err := net.SplitHostPort(host)
+	if err != nil {
+		log.Println("net.SplitHostPort error", err)
+		return
+	}
 
 	newURL, _ := req.URL.Parse("")
 	newURL.Host = host
@@ -220,8 +222,13 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		host = req.URL.Host
 	}
-	host = portPattern.ReplaceAllString(host, "")
+	host, _, err := net.SplitHostPort(host)
+	if err != nil {
+		log.Println("net.SplitHostPort error", err)
+		return
+	}
 
+	// FIXME host case insensitive?
 	upstream, ok := config.ForwardTable[host]
 	if !ok {
 		upstream = config.ForwardTable["default"]
@@ -232,7 +239,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		host = upstream.Host
 	}
 
-	hostport := fmt.Sprintf("%s:%d", host, port)
+	//hostport := fmt.Sprintf("%s:%d", host, port)
+	hostport := net.JoinHostPort(host, port)
 
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
