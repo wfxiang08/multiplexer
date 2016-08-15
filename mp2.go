@@ -23,7 +23,7 @@ import (
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
 
-var config2 Config
+var config Config
 
 type ForwardTableEntry struct {
 	Port int    `yaml:"port"`
@@ -90,15 +90,15 @@ func main() {
 	}
 
 	// try yaml tags
-	err = yaml.Unmarshal(content, &config2)
+	err = yaml.Unmarshal(content, &config)
 	if err != nil {
 		log.Fatalln("yaml unmarshal", err)
 	}
-	log.Println(config2)
-	log.Printf("%#v\n", config2)
+	log.Println(config)
+	log.Printf("%#v\n", config)
 
-	if config2.LogFile != "" {
-		LOG_FILE = config2.LogFile
+	if config.LogFile != "" {
+		LOG_FILE = config.LogFile
 	}
 
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
@@ -107,20 +107,20 @@ func main() {
 	}
 	log.SetOutput(fh)
 
-	if config2.SkipVerify != 0 {
+	if config.SkipVerify != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
-	if config2.LogDebug != 0 {
+	if config.LogDebug != 0 {
 		logDebug = true
 	}
 
-	log.Println(config2.ForwardTable)
+	log.Println(config.ForwardTable)
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
-	certdir := config2.CertDir
+	certdir := config.CertDir
 	dir, err := os.Open(certdir)
 	defer dir.Close()
 	if err != nil {
@@ -156,12 +156,12 @@ func main() {
 		Certificates:      nil,
 	}
 	tlsServer = &http.Server{
-		Addr:      fmt.Sprintf("%s:%d", config2.ListenAddr, config2.TlsPort),
+		Addr:      fmt.Sprintf("%s:%d", config.ListenAddr, config.TlsPort),
 		TLSConfig: tlsConfig,
 		Handler:   http.NewServeMux(),
 	}
 	plainServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", config2.ListenAddr, config2.PlainPort),
+		Addr:    fmt.Sprintf("%s:%d", config.ListenAddr, config.PlainPort),
 		Handler: http.NewServeMux(),
 	}
 
@@ -192,7 +192,7 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("bad req url path", req.URL.Path)
 		return
 	}
-	filename := config2.AcmeDir + "/" + req.URL.Path
+	filename := config.AcmeDir + "/" + req.URL.Path
 	log.Println("servefile", filename)
 	http.ServeFile(w, req, filename)
 }
@@ -224,9 +224,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	host = portPattern.ReplaceAllString(host, "")
 
-	upstream, ok := config2.ForwardTable[host]
+	upstream, ok := config.ForwardTable[host]
 	if !ok {
-		upstream = config2.ForwardTable["default"]
+		upstream = config.ForwardTable["default"]
 	}
 
 	port := upstream.Port
