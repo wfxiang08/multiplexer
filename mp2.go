@@ -24,6 +24,26 @@ import (
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
 
 var config map[string]interface{}
+
+type ForwardTableEntry struct {
+	Port int `yaml:"port"`
+	Host string `yaml:"host"`
+}
+
+type Config struct {
+	ForwardTable map[string]ForwardTableEntry `yaml:"forwardtable"`
+	PlainPort int `yaml:"plain_port"`
+	TlsPort int `yaml:"tls_port"`
+	Listen string `yaml:"listen"`
+	AcmeDir string `yaml:"acmedir"`
+	CertDir string `yaml:"certdir"`
+	LogFile string `yaml:"log_file"`
+	SkipVerify int `yaml:"skip_verify"`
+	LogDebug int `yaml:"log_debug"`
+}
+
+
+
 // logrotate?
 var LOG_FILE = "mp2.log"
 // FIXME use net.SplitHostPort
@@ -71,7 +91,21 @@ func main() {
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
-	yaml.Unmarshal(content, &config)
+	err = yaml.Unmarshal(content, &config)
+	if err != nil {
+		log.Fatalln("yaml unmarshal", err)
+	}
+
+	{
+		// try yaml tags
+		var config2 Config
+		err = yaml.Unmarshal(content, &config2)
+		if err != nil {
+			log.Fatalln("yaml unmarshal", err)
+		}
+		log.Println(config2)
+		log.Printf("%#v\n", config2)
+	}
 
 	if _, ok := config["logfile"]; ok {
 		LOG_FILE = config["logfile"].(string)
