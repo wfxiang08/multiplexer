@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -16,9 +17,8 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"time"
-	"github.com/gorilla/websocket"
 	"sync"
+	"time"
 )
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
@@ -26,26 +26,25 @@ var configFile = flag.String("config", "config2.yaml", "path to config file, def
 var config2 Config
 
 type ForwardTableEntry struct {
-	Port int `yaml:"port"`
+	Port int    `yaml:"port"`
 	Host string `yaml:"host"`
 }
 
 type Config struct {
 	ForwardTable map[string]ForwardTableEntry `yaml:"forwardtable"`
-	PlainPort int `yaml:"plain_port"`
-	TlsPort int `yaml:"tls_port"`
-	ListenAddr string `yaml:"listen"`
-	AcmeDir string `yaml:"acmedir"`
-	CertDir string `yaml:"certdir"`
-	LogFile string `yaml:"log_file"`
-	SkipVerify int `yaml:"skip_verify"`
-	LogDebug int `yaml:"log_debug"`
+	PlainPort    int                          `yaml:"plain_port"`
+	TlsPort      int                          `yaml:"tls_port"`
+	ListenAddr   string                       `yaml:"listen"`
+	AcmeDir      string                       `yaml:"acmedir"`
+	CertDir      string                       `yaml:"certdir"`
+	LogFile      string                       `yaml:"log_file"`
+	SkipVerify   int                          `yaml:"skip_verify"`
+	LogDebug     int                          `yaml:"log_debug"`
 }
-
-
 
 // logrotate?
 var LOG_FILE = "mp2.log"
+
 // FIXME use net.SplitHostPort
 var portPattern = regexp.MustCompile(":\\d+$")
 var logDebug = false
@@ -78,7 +77,7 @@ var upgrader = websocket.Upgrader{
 
 // FIXME share tls config with httpClient?
 var websocketDialer = &websocket.Dialer{
-	Proxy: nil,
+	Proxy:           nil,
 	TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
 }
 
@@ -321,7 +320,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	resp.Body.Close()
 }
-
 
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
 	// force websocket-tls
