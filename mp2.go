@@ -77,39 +77,38 @@ var websocketDialer = &websocket.Dialer{
 }
 
 func main() {
+	// config
 	flag.Parse()
-
 	content, err := ioutil.ReadFile(*configFile)
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
-
 	err = yaml.Unmarshal(content, &config)
 	if err != nil {
 		log.Fatalln("yaml unmarshal", err)
 	}
 	log.Printf("%#v\n", config)
 
+	// logfile
 	if config.LogFile != "" {
 		LOG_FILE = config.LogFile
 	}
-
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatalln("cannot open logfile:", err)
 	}
 	log.SetOutput(fh)
 	//defer fh.Close()?
+	log.Printf("Current config: %#v\n", config)
 
 	if config.SkipVerify != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
-	log.Printf("Current config: %#v\n", config)
-
 	var plainServer *http.Server
 	var tlsServer *http.Server
+	// should use ioutil.ReadDir
 	dir, err := os.Open(config.CertDir)
 	defer dir.Close()
 	if err != nil {
@@ -132,14 +131,13 @@ func main() {
 	}
 	tlsConfig := &tls.Config{
 		GetCertificate: func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			sn := clientHello.ServerName
-			if sn != "" {
-				cert, ok := mapCert[sn]
+			if clientHello.ServerName != "" {
+				cert, ok := mapCert[clientHello.ServerName]
 				if ok {
 					return cert, nil
 				}
 			}
-			return nil, errors.New("<" + sn + "> not found")
+			return nil, errors.New("<" + clientHello.ServerName + "> not found")
 		},
 		NameToCertificate: mapCert,
 		Certificates:      nil,
@@ -153,7 +151,6 @@ func main() {
 		Addr:    net.JoinHostPort(config.ListenAddr, config.PlainPort),
 		Handler: http.NewServeMux(),
 	}
-
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
@@ -310,6 +307,7 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	debugLog("[DEBUG] websocket upstream at", newURL.String())
 
 	// downstream
+	// Connection and Upgrade are needed
 	conn, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Println("upgrade", err)
@@ -317,12 +315,12 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	}
 	defer conn.Close()
 
+	// upstream
 	req.Header.Del("Upgrade")
 	req.Header.Del("Connection")
 	req.Header.Del("Sec-WebSocket-Key")
 	req.Header.Del("Sec-WebSocket-Version")
 	req.Header.Del("Sec-WebSocket-Protocol")
-	// upstream
 	connUp, respUp, err := websocketDialer.Dial(newURL.String(), req.Header)
 	if err != nil {
 		log.Println("dial websocket:", err)
