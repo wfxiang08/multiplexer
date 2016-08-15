@@ -68,9 +68,9 @@ var httpClient = &http.Client{
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		// FIXME strip port and check
-		log.Println("[DEBUG] Origin:", r.Header.Get("Origin"))
-		log.Println("[DEBUG] Host:", r.Host)
+		// FIXME strip port and check origin == host?
+		debugLog("[DEBUG] Origin:", r.Header.Get("Origin"))
+		debugLog("[DEBUG] Host:", r.Host)
 		return true
 	},
 }
@@ -322,7 +322,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
 	// force websocket-tls
 	newURL.Scheme = "wss"
-	log.Println("[DEBUG] websocket upstream at", newURL.String())
+	debugLog("[DEBUG] websocket upstream at", newURL.String())
 
 	// downstream
 	conn, err := upgrader.Upgrade(w, req, nil)
