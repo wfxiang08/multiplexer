@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"flag"
-	//"fmt"
 	"github.com/gorilla/websocket"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -45,7 +44,7 @@ type Config struct {
 // logrotate?
 var LOG_FILE = "mp2.log"
 
-var logDebug = false
+//var logDebug = false
 
 var httpClient = &http.Client{
 	Timeout: 20 * time.Second,
@@ -102,15 +101,16 @@ func main() {
 		log.Fatalln("cannot open logfile:", err)
 	}
 	log.SetOutput(fh)
+	//defer fh.Close()?
 
 	if config.SkipVerify != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
-	if config.LogDebug != 0 {
-		logDebug = true
-	}
+	//if config.LogDebug != 0 {
+	//	logDebug = true
+	//}
 
 	log.Printf("Current config: %#v\n", config)
 
@@ -238,7 +238,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		host = upstream.Host
 	}
 
-	//hostport := fmt.Sprintf("%s:%d", host, port)
 	hostport := net.JoinHostPort(host, port)
 
 	newURL, _ := req.URL.Parse("")
@@ -399,7 +398,7 @@ func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websock
 }
 
 func debugLog(v ...interface{}) {
-	if logDebug {
+	if config.LogDebug != 0 {
 		log.Println(v...)
 	}
 }
