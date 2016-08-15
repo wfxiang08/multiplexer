@@ -108,15 +108,9 @@ func main() {
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
-	// should use ioutil.ReadDir
-	dir, err := os.Open(config.CertDir)
-	defer dir.Close()
+	fi, err := ioutil.ReadDir(config.CertDir)
 	if err != nil {
-		log.Fatal("cannot open certdir:", config.CertDir, err)
-	}
-	fi, err := dir.Readdir(0)
-	if err != nil {
-		log.Fatal("cannot readdir:", err)
+		log.Fatal("cannot readdir:", config.CertDir, err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
 	for _, subdir := range fi {
