@@ -222,18 +222,49 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	// unset it
 	req.RequestURI = ""
 
+	// FIXME: should copy in_req to out_req
+
 	// FIXME: all hop-by-hop headers
+	// RFC2616, 13.5.1
+	//Connection
+	req.Header.Del("Keep-Alive")
+	req.Header.Del("Proxy-Authenticate")
+	req.Header.Del("Proxy-Authorization")
+	req.Header.Del("TE")
+	req.Header.Del("Trailer") // not Trailers RFC2616 errata...
+	req.Header.Del("Transfer-Encoding")
+	//Upgrade
+
+	// non-standard
 	req.Header.Del("Accept-Encoding")
 	req.Header.Del("Proxy-Connection")
+
+	req.Header.Del("X-Forwarded-For")
+	req.Header.Del("X-Real-IP")
+	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
+		req.Header.Set("X-Forwarded-For", clientIP)
+		req.Header.Set("X-Real-IP", clientIP)
+	} else {
+		log.Println("net.SplitHostPort", req.RemoteAddr, err)
+	}
+	req.Header.Set("Host", req.Host)
+
+	req.Header.Del("X-Forwarded-Proto")
+	req.Header.Set("X-Forwarded-Proto", "https")
+
 	// unset Connection
 	// drop "Connection"
 	// FIXME case sensitive?
 	if req.Header.Get("Connection") != "Upgrade" {
 		req.Header.Del("Connection")
+		req.Header.Del("Upgrade")
 	} else if req.Header.Get("Upgrade") == "websocket" {
 		websocketHandler(w, req, newURL)
 		return
 	}
+
+	//req.Header.Del("Connection")
+	//req.Header.Del("Upgrade")
 
 	resp, err := client.Do(req)
 	//log.Println(resp)
@@ -247,6 +278,10 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 		w.Header()[key] = value
+	}
+	if len(resp.Trailer) > 0 {
+		// FIXME
+		log.Println("response has trailer?")
 	}
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)
