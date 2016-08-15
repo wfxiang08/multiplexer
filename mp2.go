@@ -214,6 +214,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Scheme = "https"
 	newURL.Host = hostport
 
+	// save previous Host in Header
+	req.Header.Set("Host", req.Host)
 	req.Host = hostport
 	req.URL = newURL
 	//client := &http.Client{}
@@ -247,7 +249,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		log.Println("net.SplitHostPort", req.RemoteAddr, err)
 	}
-	req.Header.Set("Host", req.Host)
 
 	req.Header.Del("X-Forwarded-Proto")
 	req.Header.Set("X-Forwarded-Proto", "https")
