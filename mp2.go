@@ -175,7 +175,6 @@ func logRequest(req *http.Request) {
 }
 
 var acmeFilter = regexp.MustCompile("^/\\.well-known")
-
 func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	if !acmeFilter.MatchString(req.URL.Path) {
@@ -200,11 +199,9 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("net.SplitHostPort error", err)
 		return
 	}
-
 	newURL, _ := req.URL.Parse("")
 	newURL.Host = host
 	newURL.Scheme = "https"
-
 	http.Redirect(w, req, newURL.String(), http.StatusMovedPermanently)
 }
 
@@ -233,23 +230,19 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	hostport := net.JoinHostPort(host, port)
-
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
 	newURL.Host = hostport
 
 	// the outside host
 	req.Host = host
-
 	// the transport host
 	req.URL = newURL
 	// unset it
 	req.RequestURI = ""
 
 	// FIXME: should copy in_req to out_req
-
-	// FIXME: all hop-by-hop headers
-	// RFC2616, 13.5.1
+	// All hop-by-hop headers, RFC2616, 13.5.1
 	//Connection
 	req.Header.Del("Keep-Alive")
 	req.Header.Del("Proxy-Authenticate")
@@ -263,6 +256,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Header.Del("Accept-Encoding")
 	req.Header.Del("Proxy-Connection")
 
+	// reverse proxy
 	req.Header.Del("X-Forwarded-For")
 	req.Header.Del("X-Real-IP")
 	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
@@ -271,7 +265,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		log.Println("net.SplitHostPort", req.RemoteAddr, err)
 	}
-
 	req.Header.Del("X-Forwarded-Proto")
 	req.Header.Set("X-Forwarded-Proto", "https")
 
@@ -287,9 +280,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// reuse global client
 	resp, err := httpClient.Do(req)
-	//log.Println(resp)
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
