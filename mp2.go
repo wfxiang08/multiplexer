@@ -44,8 +44,6 @@ type Config struct {
 // logrotate?
 var LOG_FILE = "mp2.log"
 
-//var logDebug = false
-
 var httpClient = &http.Client{
 	Timeout: 20 * time.Second,
 	Transport: &http.Transport{
@@ -107,10 +105,6 @@ func main() {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
-
-	//if config.LogDebug != 0 {
-	//	logDebug = true
-	//}
 
 	log.Printf("Current config: %#v\n", config)
 
