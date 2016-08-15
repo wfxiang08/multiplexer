@@ -215,8 +215,11 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Host = hostport
 
 	// save previous Host in Header
-	req.Header.Set("Host", req.Host)
-	req.Host = hostport
+	//req.Header.Set("Host", req.Host)
+	// the outside host
+	req.Host = host
+
+	// the transport host
 	req.URL = newURL
 	//client := &http.Client{}
 	// reuse
