@@ -3,6 +3,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -358,7 +359,11 @@ func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websock
 			connTo.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
 			return
 		}
-		log.Println(logTag, string(p))
+		if messageType == websocket.TextMessage {
+			log.Println(logTag, messageType, string(p))
+		} else {
+			log.Println(logTag, messageType, hex.Dump(p))
+		}
 		err = connTo.WriteMessage(messageType, p)
 		if err != nil {
 			log.Println(logTag, "t02", err)
