@@ -23,7 +23,8 @@ import (
 
 var configFile = flag.String("config", "config2.yaml", "path to config file, defailt config2.yaml")
 
-var config map[string]interface{}
+//var config map[string]interface{}
+var config2 Config
 
 type ForwardTableEntry struct {
 	Port int `yaml:"port"`
@@ -34,7 +35,7 @@ type Config struct {
 	ForwardTable map[string]ForwardTableEntry `yaml:"forwardtable"`
 	PlainPort int `yaml:"plain_port"`
 	TlsPort int `yaml:"tls_port"`
-	Listen string `yaml:"listen"`
+	ListenAddr string `yaml:"listen"`
 	AcmeDir string `yaml:"acmedir"`
 	CertDir string `yaml:"certdir"`
 	LogFile string `yaml:"log_file"`
@@ -91,24 +92,21 @@ func main() {
 	if err != nil {
 		log.Fatalln("cannot read config:", err)
 	}
-	err = yaml.Unmarshal(content, &config)
+	//err = yaml.Unmarshal(content, &config)
+	//if err != nil {
+	//	log.Fatalln("yaml unmarshal", err)
+	//}
+
+	// try yaml tags
+	err = yaml.Unmarshal(content, &config2)
 	if err != nil {
 		log.Fatalln("yaml unmarshal", err)
 	}
+	log.Println(config2)
+	log.Printf("%#v\n", config2)
 
-	{
-		// try yaml tags
-		var config2 Config
-		err = yaml.Unmarshal(content, &config2)
-		if err != nil {
-			log.Fatalln("yaml unmarshal", err)
-		}
-		log.Println(config2)
-		log.Printf("%#v\n", config2)
-	}
-
-	if _, ok := config["logfile"]; ok {
-		LOG_FILE = config["logfile"].(string)
+	if config2.LogFile != "" {
+		LOG_FILE = config2.LogFile
 	}
 
 	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
@@ -117,20 +115,21 @@ func main() {
 	}
 	log.SetOutput(fh)
 
-	if _, ok := config["skip_verify"]; ok && config["skip_verify"] != 0 {
+	if config2.SkipVerify != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
-	if _, ok := config["log_debug"]; ok && config["log_debug"] != 0 {
+	if config2.LogDebug != 0 {
 		logDebug = true
 	}
 
-	log.Println(config["forwardtable"])
+	//log.Println(config["forwardtable"])
+	log.Println(config2.ForwardTable)
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
-	certdir := config["certdir"].(string)
+	certdir := config2.CertDir
 	dir, err := os.Open(certdir)
 	defer dir.Close()
 	if err != nil {
@@ -141,9 +140,9 @@ func main() {
 		log.Fatal("cannot readdir:", err)
 	}
 	mapCert := make(map[string]*tls.Certificate)
-	plainPort := config["plain_port"]
-	tlsPort := config["tls_port"]
-	listenAddr := config["listen"]
+	//plainPort := config["plain_port"]
+	//tlsPort := config["tls_port"]
+	//listenAddr := config["listen"]
 	for _, subdir := range fi {
 		hostname := subdir.Name()
 		certFile := certdir + "/" + hostname + "/fullchain.pem"
@@ -169,12 +168,12 @@ func main() {
 		Certificates:      nil,
 	}
 	tlsServer = &http.Server{
-		Addr:      fmt.Sprintf("%s:%d", listenAddr, tlsPort),
+		Addr:      fmt.Sprintf("%s:%d", config2.ListenAddr, config2.TlsPort),
 		TLSConfig: tlsConfig,
 		Handler:   http.NewServeMux(),
 	}
 	plainServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", listenAddr, plainPort),
+		Addr:    fmt.Sprintf("%s:%d", config2.ListenAddr, config2.PlainPort),
 		Handler: http.NewServeMux(),
 	}
 
@@ -205,7 +204,8 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("bad req url path", req.URL.Path)
 		return
 	}
-	filename := config["acmedir"].(string) + "/" + req.URL.Path
+	//filename := config["acmedir"].(string) + "/" + req.URL.Path
+	filename := config2.AcmeDir + "/" + req.URL.Path
 	log.Println("servefile", filename)
 	http.ServeFile(w, req, filename)
 }
@@ -237,17 +237,20 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	host = portPattern.ReplaceAllString(host, "")
 
-	pair, ok := config["forwardtable"].(map[interface{}]interface{})[host]
+	//pair, ok := config["forwardtable"].(map[interface{}]interface{})[host]
+	upstream, ok := config2.ForwardTable[host]
 	if !ok {
-		pair = config["forwardtable"].(map[interface{}]interface{})["default"]
+		//pair = config["forwardtable"].(map[interface{}]interface{})["default"]
+		upstream = config2.ForwardTable["default"]
 	}
 
-	pair_map := pair.(map[interface{}]interface{})
-	port := pair_map["port"].(int)
+	//pair_map := pair.(map[interface{}]interface{})
+	//port := pair_map["port"].(int)
+	port := upstream.Port
 
-	host_interface, ok := pair_map["host"]
-	if ok {
-		host = host_interface.(string)
+	//host_interface, ok := pair_map["host"]
+	if upstream.Host != "" {
+		host = upstream.Host
 	}
 
 	hostport := fmt.Sprintf("%s:%d", host, port)
