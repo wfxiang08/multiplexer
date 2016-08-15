@@ -25,21 +25,21 @@ var configFile = flag.String("config", "config2.yaml", "path to config file, def
 
 var config Config
 
-type ForwardTableEntry struct {
+type Target struct {
 	Port int    `yaml:"port"`
 	Host string `yaml:"host"`
 }
 
 type Config struct {
-	ForwardTable map[string]ForwardTableEntry `yaml:"forwardtable"`
-	PlainPort    int                          `yaml:"plain_port"`
-	TlsPort      int                          `yaml:"tls_port"`
-	ListenAddr   string                       `yaml:"listen"`
-	AcmeDir      string                       `yaml:"acmedir"`
-	CertDir      string                       `yaml:"certdir"`
-	LogFile      string                       `yaml:"log_file"`
-	SkipVerify   int                          `yaml:"skip_verify"`
-	LogDebug     int                          `yaml:"log_debug"`
+	ForwardTable map[string]Target `yaml:"forwardtable"`
+	PlainPort    int               `yaml:"plain_port"`
+	TlsPort      int               `yaml:"tls_port"`
+	ListenAddr   string            `yaml:"listen"`
+	AcmeDir      string            `yaml:"acmedir"`
+	CertDir      string            `yaml:"certdir"`
+	LogFile      string            `yaml:"log_file"`
+	SkipVerify   int               `yaml:"skip_verify"`
+	LogDebug     int               `yaml:"log_debug"`
 }
 
 // logrotate?
@@ -228,7 +228,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	port := upstream.Port
-
 	if upstream.Host != "" {
 		host = upstream.Host
 	}
