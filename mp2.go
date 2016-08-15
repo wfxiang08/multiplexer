@@ -298,51 +298,32 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	}
 	defer connUp.Close()
 
-
 	var wg sync.WaitGroup
-
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer log.Println("down->up done")
-		for {
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("t01", err)
-				connUp.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
-				return
-			}
-			log.Println("down->up", string(p))
-			err = connUp.WriteMessage(messageType, p)
-			if err != nil {
-				log.Println("t02", err)
-				// FIXME
-				conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
-				return
-			}
-		}
-	}()
+	go websocketTunnel("down->up", wg, conn, connUp)
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		defer log.Println("up->down done")
-		for {
-			messageType, p, err := connUp.ReadMessage()
-			if err != nil {
-				log.Println("t03", err)
-				conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
-				return
-			}
-			log.Println("up->down", string(p))
-			err = conn.WriteMessage(messageType, p)
-			if err != nil {
-				log.Println("t04", err)
-				// FIXME
-				connUp.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
-				return
-			}
-		}
-	}()
+	go websocketTunnel("up->down", wg, connUp, conn)
 	wg.Wait()
 	log.Println("waitgroup finished")
+}
+
+func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websocket.Conn) {
+	defer wg.Done()
+	defer log.Println(logTag, "done")
+	for {
+		messageType, p, err := connFrom.ReadMessage()
+		if err != nil {
+			log.Println(logTag, "t01", err)
+			connTo.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+			return
+		}
+		log.Println(logTag, string(p))
+		err = connTo.WriteMessage(messageType, p)
+		if err != nil {
+			log.Println(logTag, "t02", err)
+			// FIXME
+			connFrom.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+			return
+		}
+	}
 }
