@@ -246,15 +246,11 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Scheme = "https"
 	newURL.Host = hostport
 
-	// save previous Host in Header
-	//req.Header.Set("Host", req.Host)
 	// the outside host
 	req.Host = host
 
 	// the transport host
 	req.URL = newURL
-	// reuse global client
-	client := httpClient
 	// unset it
 	req.RequestURI = ""
 
@@ -296,12 +292,13 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	} else if req.Header.Get("Upgrade") == "websocket" {
 		websocketHandler(w, req, newURL)
 		return
+	} else {
+		log.Println("unknown Upgrade", req.Header.Get("Upgrade"))
+		return
 	}
 
-	//req.Header.Del("Connection")
-	//req.Header.Del("Upgrade")
-
-	resp, err := client.Do(req)
+	// reuse global client
+	resp, err := httpClient.Do(req)
 	//log.Println(resp)
 	if err != nil {
 		log.Println("client.Do err:", err)
