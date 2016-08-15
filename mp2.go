@@ -50,8 +50,6 @@ var LOG_FILE = "mp2.log"
 var portPattern = regexp.MustCompile(":\\d+$")
 var logDebug = false
 
-//var httpClient = &http.Client{}
-// for local test
 var httpClient = &http.Client{
 	Timeout: 20 * time.Second,
 	Transport: &http.Transport{
@@ -251,8 +249,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 
 	// the transport host
 	req.URL = newURL
-	//client := &http.Client{}
-	// reuse
+	// reuse global client
 	client := httpClient
 	// unset it
 	req.RequestURI = ""
