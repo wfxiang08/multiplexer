@@ -180,14 +180,8 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 // strip ":port" if present
 func parseHost(req *http.Request) string {
 	if req.Host == "" {
-		log.Fatalln("req.Host empty")
+		log.Fatalln("req.Host empty") // net/http server set req.Host automatically
 	}
-	// not needed
-	//if req.Host != "" {
-	//	host = req.Host
-	//} else {
-	//	host = req.URL.Host
-	//}
 	host_strip, _, err := net.SplitHostPort(req.Host)
 	if err != nil {
 		log.Println("net.SplitHostPort error", err)
