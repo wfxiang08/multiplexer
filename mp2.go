@@ -424,7 +424,16 @@ func websocketWriteClose(conn *websocket.Conn, err error) {
 	} else {
 		e = &websocket.CloseError{Code:websocket.CloseAbnormalClosure, Text:""}
 	}
-	err2 := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(e.Code, e.Text), time.Time{})
+	debugLog("close code is", e.Code)
+	var closeMessage []byte
+	if (e.Code != websocket.CloseNoStatusReceived) &&
+	   (e.Code != websocket.CloseAbnormalClosure) &&
+	   (e.Code != websocket.CloseTLSHandshake) {
+		closeMessage = websocket.FormatCloseMessage(e.Code, e.Text)
+	} else {
+		closeMessage = []byte{}
+	}
+	err2 := conn.WriteControl(websocket.CloseMessage, closeMessage, time.Time{})
 	if err2 != nil {
 		log.Println(err2)
 	}
