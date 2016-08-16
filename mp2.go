@@ -198,6 +198,8 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 
 func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
+	debugLog("host:", req.Host)
+	debugLog("origin:", req.Header.Get("Origin"))
 	var host string
 	if req.Host != "" {
 		host = req.Host
