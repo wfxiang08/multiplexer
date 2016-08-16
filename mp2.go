@@ -265,14 +265,12 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	log.Println(connectionList, upgradeList)
 
 
-	//if req.Header.Get("Connection") != "Upgrade" {
 	if (len(connectionList) == 0) || (connectionList[0] != "upgrade") {
 		req.Header.Del("Connection")
 		req.Header.Del("Upgrade")
 		for _, key := range connectionList {
 			req.Header.Del(key)
 		}
-	//} else if req.Header.Get("Upgrade") == "websocket" {
 	} else if (len(upgradeList) > 0) && (upgradeList[0] == "websocket") {
 		websocketHandler(w, req, newURL)
 		return
