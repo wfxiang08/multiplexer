@@ -231,8 +231,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Scheme = "https"
 	newURL.Host = hostport
 
-	// the outside host
-	req.Host = host
+	// the outside host: use the original value from req
+	// (keep ":port" unstripped, useful if TlsPort is not 443)
+	//req.Host = host
 	// the transport host
 	req.URL = newURL
 	// unset it
