@@ -77,6 +77,8 @@ var websocketDialer = &websocket.Dialer{
 	TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
 }
 
+// Parse config file, set up log file, load cert/key pairs, set up
+// plain/tls servers
 func main() {
 	// config
 	flag.Parse()
@@ -161,11 +163,14 @@ func main() {
 	}
 }
 
+// Log request and Header (probabily should log less)
 func logRequest(req *http.Request) {
 	log.Printf("%T <%s> \"%v\" %s <%s> %v %v %s %v\n", req, req.RemoteAddr, req.URL, req.Proto, req.Host, req.Header, req.Form, req.RequestURI, req.TLS)
 }
 
 var acmeFilter = regexp.MustCompile("^/\\.well-known")
+// Handle acme (letsencrypt) SimpleHttp/http-01 challenge
+// (or other /.well-known urls)
 func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	if !acmeFilter.MatchString(req.URL.Path) {
@@ -177,7 +182,7 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filename)
 }
 
-// strip ":port" if present
+// Strip ":port" from req.Host if present
 func parseHost(req *http.Request) string {
 	//if req.Host == "" {
 	//	log.Fatalln("req.Host empty") // net/http server set req.Host automatically
@@ -190,6 +195,7 @@ func parseHost(req *http.Request) string {
 	return host_strip
 }
 
+// For http, send redirection to https
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	host := parseHost(req)
@@ -203,6 +209,7 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, newURL.String(), http.StatusMovedPermanently)
 }
 
+// For https, forward requests to upstream https (application) servers
 func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	debugLog("host:", req.Host)
@@ -298,6 +305,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	resp.Body.Close()
 }
 
+// Combine header lines, and split at "," (only useful for certain headers)
 func parseHeader (header http.Header, key string) []string {
 	var valueList []string
 	key_canon := http.CanonicalHeaderKey(key)
@@ -315,6 +323,7 @@ func parseHeader (header http.Header, key string) []string {
 	return valueList
 }
 
+// Handle upgrades to websocket
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
 	// force websocket-tls
 	newURL.Scheme = "wss"
@@ -368,6 +377,7 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	debugLog("[DEBUG] waitgroup finished")
 }
 
+// Simplex websocket tunnel, connFrom => connTo
 func websocketTunnel(logTag string, wg *sync.WaitGroup, connFrom, connTo *websocket.Conn) {
 	defer wg.Done()
 	for {
@@ -391,11 +401,13 @@ func websocketTunnel(logTag string, wg *sync.WaitGroup, connFrom, connTo *websoc
 	}
 }
 
+// Detect if error is a *websocket.CloseError
 func websocketIsCloseError(err error) bool {
 	_, ok := err.(*websocket.CloseError)
 	return ok
 }
 
+// Get the *websocket.CloseError inside of an error
 func websocketCloseError(err error) *websocket.CloseError {
 	if e, ok := err.(*websocket.CloseError); ok {
 		return e
@@ -404,6 +416,7 @@ func websocketCloseError(err error) *websocket.CloseError {
 	}
 }
 
+// Forward websocket close code/text
 func websocketWriteClose(conn *websocket.Conn, err error) {
 	var e *websocket.CloseError
 	if websocketIsCloseError(err) {
@@ -417,6 +430,7 @@ func websocketWriteClose(conn *websocket.Conn, err error) {
 	}
 }
 
+// Write log conditioned on config.LogDebug
 func debugLog(v ...interface{}) {
 	if config.LogDebug != 0 {
 		log.Println(v...)
