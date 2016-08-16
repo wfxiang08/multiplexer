@@ -374,7 +374,7 @@ func websocketTunnel(logTag string, wg *sync.WaitGroup, connFrom, connTo *websoc
 		messageType, p, err := connFrom.ReadMessage()
 		if err != nil {
 			debugLog(logTag, "t01", err)
-			connTo.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+			websocketWriteClose(connTo, err)
 			return
 		}
 		if messageType == websocket.TextMessage {
@@ -385,10 +385,35 @@ func websocketTunnel(logTag string, wg *sync.WaitGroup, connFrom, connTo *websoc
 		err = connTo.WriteMessage(messageType, p)
 		if err != nil {
 			debugLog(logTag, "t02", err)
-			// FIXME
-			connFrom.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
+			websocketWriteClose(connFrom, err)
 			return
 		}
+	}
+}
+
+func websocketIsCloseError(err error) bool {
+	_, ok := err.(*websocket.CloseError)
+	return ok
+}
+
+func websocketCloseError(err error) *websocket.CloseError {
+	if e, ok := err.(*websocket.CloseError); ok {
+		return e
+	} else {
+		return nil
+	}
+}
+
+func websocketWriteClose(conn *websocket.Conn, err error) {
+	var e *websocket.CloseError
+	if websocketIsCloseError(err) {
+		e = websocketCloseError(err)
+	} else {
+		e = &websocket.CloseError{Code:websocket.CloseAbnormalClosure, Text:""}
+	}
+	err2 := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(e.Code, e.Text), time.Time{})
+	if err2 != nil {
+		log.Println(err2)
 	}
 }
 
