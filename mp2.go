@@ -369,18 +369,15 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	defer connUp.Close()
 
 	var wg sync.WaitGroup
-	log.Println("wg", wg)
 	wg.Add(1)
-	log.Println("wg", wg)
-	go websocketTunnel("[DEBUG] down->up", wg, conn, connUp)
+	go websocketTunnel("[DEBUG] down->up", &wg, conn, connUp)
 	wg.Add(1)
-	log.Println("wg", wg)
-	go websocketTunnel("[DEBUG] up->down", wg, connUp, conn)
+	go websocketTunnel("[DEBUG] up->down", &wg, connUp, conn)
 	wg.Wait()
 	log.Println("[DEBUG] waitgroup finished")
 }
 
-func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websocket.Conn) {
+func websocketTunnel(logTag string, wg *sync.WaitGroup, connFrom, connTo *websocket.Conn) {
 	defer debugLog(logTag, "done", wg)
 	defer wg.Done()
 	for {
