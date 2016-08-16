@@ -345,6 +345,7 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	req.Header.Del("Sec-WebSocket-Key")
 	req.Header.Del("Sec-WebSocket-Version")
 	req.Header.Del("Sec-WebSocket-Protocol")
+	req.Header.Set("Host", req.Host)
 	connUp, respUp, err := websocketDialer.Dial(newURL.String(), req.Header)
 	if err != nil {
 		log.Println("dial websocket:", err)
