@@ -1,15 +1,21 @@
 forwardtable:
+  # default target: required
   default:
     port: 8443
+  # other ServerName: lower-case
   "some.virtual.host":
     port: 8080
   shorthost:
     port: 8080
     host: "longhost"
+  longhost:
+    port: 8080
 
 # port and address to listen on
 plain_port: 80
 tls_port: 443
+# can be "localhost", "127.0.0.1", "::1", ...
+# (don't use brackets around ipv6 addresses, as they are added as needed)
 listen: ""
 
 # for letsencrypt SimpleHttp/http-01 challenge
@@ -19,5 +25,8 @@ certdir: "live"
 
 logfile: mp0.log
 
+# skip verification for upstream server's certificate
 skip_verify: 0
+
+# some debug logging
 log_debug: 0
