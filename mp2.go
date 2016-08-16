@@ -210,8 +210,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// FIXME host case insensitive?
-	upstream, ok := config.ForwardTable[host]
+	// use case-insensitive comparison for host name
+	upstream, ok := config.ForwardTable[strings.ToLower(host)]
 	if !ok {
 		upstream = config.ForwardTable["default"]
 	}
@@ -304,7 +304,6 @@ func parseHeader (header http.Header, key string) []string {
 	if _, ok := header[key_canon]; !ok {
 		return valueList // empty (nil)
 	}
-
 	for _, line := range header[key_canon] {
 		lineList := strings.Split(line, ",")
 		for _, v := range lineList {
