@@ -259,24 +259,18 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Header.Del("X-Forwarded-Proto")
 	req.Header.Set("X-Forwarded-Proto", "https")
 
-	// FIXME case sensitive?
 	connectionList := parseHeader(req.Header, "Connection")
-	upgradeList := parseHeader(req.Header, "Upgrade")
-	log.Println(connectionList, upgradeList)
+	log.Println(connectionList)
 
-
-	if (len(connectionList) == 0) || (connectionList[0] != "upgrade") {
+	if websocket.IsWebSocketUpgrade(req) {
+		websocketHandler(w, req, newURL)
+		return
+	} else {
 		req.Header.Del("Connection")
 		req.Header.Del("Upgrade")
 		for _, key := range connectionList {
 			req.Header.Del(key)
 		}
-	} else if (len(upgradeList) > 0) && (upgradeList[0] == "websocket") {
-		websocketHandler(w, req, newURL)
-		return
-	} else {
-		log.Println("unknown Upgrade", upgradeList)
-		return
 	}
 
 	resp, err := httpClient.Do(req)
