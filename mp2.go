@@ -308,20 +308,20 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 
 // Combine header lines, and split at "," (only useful for certain headers)
 func parseHeader (header http.Header, key string) []string {
-	var valueList []string
+	var tokenList []string
 	key_canon := http.CanonicalHeaderKey(key)
 	if _, ok := header[key_canon]; !ok {
-		return valueList // empty (nil)
+		return tokenList // empty (nil)
 	}
 	for _, line := range header[key_canon] {
 		lineList := strings.Split(line, ",")
 		for _, v := range lineList {
 			v = strings.TrimSpace(v)
 			v = strings.ToLower(v)
-			valueList = append(valueList, v)
+			tokenList = append(tokenList, v)
 		}
 	}
-	return valueList
+	return tokenList
 }
 
 // Handle upgrades to websocket
