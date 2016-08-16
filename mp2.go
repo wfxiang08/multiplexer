@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -259,14 +260,24 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Header.Set("X-Forwarded-Proto", "https")
 
 	// FIXME case sensitive?
-	if req.Header.Get("Connection") != "Upgrade" {
+	connectionList := parseHeader(req.Header, "Connection")
+	upgradeList := parseHeader(req.Header, "Upgrade")
+	log.Println(connectionList, upgradeList)
+
+
+	//if req.Header.Get("Connection") != "Upgrade" {
+	if (len(connectionList) == 0) || (connectionList[0] != "upgrade") {
 		req.Header.Del("Connection")
 		req.Header.Del("Upgrade")
-	} else if req.Header.Get("Upgrade") == "websocket" {
+		for _, key := range connectionList {
+			req.Header.Del(key)
+		}
+	//} else if req.Header.Get("Upgrade") == "websocket" {
+	} else if (len(upgradeList) > 0) && (upgradeList[0] == "websocket") {
 		websocketHandler(w, req, newURL)
 		return
 	} else {
-		log.Println("unknown Upgrade", req.Header.Get("Upgrade"))
+		log.Println("unknown Upgrade", upgradeList)
 		return
 	}
 
@@ -293,6 +304,24 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("io.Copy err:", err)
 	}
 	resp.Body.Close()
+}
+
+func parseHeader (header http.Header, key string) []string {
+	var valueList []string
+	key_canon := http.CanonicalHeaderKey(key)
+	if _, ok := header[key_canon]; !ok {
+		return valueList // empty (nil)
+	}
+
+	for _, line := range header[key_canon] {
+		lineList := strings.Split(line, ",")
+		for _, v := range lineList {
+			v = strings.TrimSpace(v)
+			v = strings.ToLower(v)
+			valueList = append(valueList, v)
+		}
+	}
+	return valueList
 }
 
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
@@ -340,17 +369,20 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	defer connUp.Close()
 
 	var wg sync.WaitGroup
+	log.Println("wg", wg)
 	wg.Add(1)
+	log.Println("wg", wg)
 	go websocketTunnel("[DEBUG] down->up", wg, conn, connUp)
 	wg.Add(1)
+	log.Println("wg", wg)
 	go websocketTunnel("[DEBUG] up->down", wg, connUp, conn)
 	wg.Wait()
 	log.Println("[DEBUG] waitgroup finished")
 }
 
 func websocketTunnel(logTag string, wg sync.WaitGroup, connFrom, connTo *websocket.Conn) {
+	defer debugLog(logTag, "done", wg)
 	defer wg.Done()
-	defer debugLog(logTag, "done")
 	for {
 		messageType, p, err := connFrom.ReadMessage()
 		if err != nil {
