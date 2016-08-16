@@ -1,9 +1,0 @@
-"forwardtable":
-  "http":
-    "www.example1.org": "localhost:8020"
-    "default": "www.google.com:80"
-  "https":
-    "default": "www.google.com:443"
-"port": 8081
-"porttls": 8443
-
