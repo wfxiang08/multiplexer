@@ -193,6 +193,10 @@ func parseHost(req *http.Request) string {
 func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	host := parseHost(req)
+	// [?] port, err := net.LookupPort("tcp", "https") and strconv.Itoa()
+	if config.TlsPort != "443" {
+		host = net.JoinHostPort(host, config.TlsPort)
+	}
 	newURL, _ := req.URL.Parse("")
 	newURL.Host = host
 	newURL.Scheme = "https"
