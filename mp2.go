@@ -294,16 +294,16 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		w.Header()[key] = value
 	}
-	// FIXME process trailers?
-	if len(resp.Trailer) > 0 {
-		log.Println("response has trailer?")
-	}
 	w.WriteHeader(resp.StatusCode)
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
 		log.Println("io.Copy err:", err)
 	}
 	resp.Body.Close()
+	// FIXME process trailers?
+	if len(resp.Trailer) > 0 {
+		log.Println("response has trailer?")
+	}
 }
 
 // Combine header lines, and split at "," (only useful for certain headers)
