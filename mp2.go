@@ -177,19 +177,28 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filename)
 }
 
-func redirectHandler(w http.ResponseWriter, req *http.Request) {
-	logRequest(req)
-	var host string
-	if req.Host != "" {
-		host = req.Host
-	} else {
-		host = req.URL.Host
+// strip ":port" if present
+func parseHost(req *http.Request) string {
+	if req.Host == "" {
+		log.Fatalln("req.Host empty")
 	}
-	host, _, err := net.SplitHostPort(host)
+	// not needed
+	//if req.Host != "" {
+	//	host = req.Host
+	//} else {
+	//	host = req.URL.Host
+	//}
+	host_strip, _, err := net.SplitHostPort(req.Host)
 	if err != nil {
 		log.Println("net.SplitHostPort error", err)
-		return
+		return req.Host
 	}
+	return host_strip
+}
+
+func redirectHandler(w http.ResponseWriter, req *http.Request) {
+	logRequest(req)
+	host := parseHost(req)
 	newURL, _ := req.URL.Parse("")
 	newURL.Host = host
 	newURL.Scheme = "https"
@@ -200,17 +209,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	logRequest(req)
 	debugLog("host:", req.Host)
 	debugLog("origin:", req.Header.Get("Origin"))
-	var host string
-	if req.Host != "" {
-		host = req.Host
-	} else {
-		host = req.URL.Host
-	}
-	host, _, err := net.SplitHostPort(host)
-	if err != nil {
-		log.Println("net.SplitHostPort error", err)
-		return
-	}
+	host := parseHost(req)
 
 	// use case-insensitive comparison for host name
 	upstream, ok := config.ForwardTable[strings.ToLower(host)]
@@ -252,6 +251,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	// reverse proxy
 	req.Header.Del("X-Forwarded-For")
 	req.Header.Del("X-Real-IP")
+	// RemoteAddr contains "IP:port"
 	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
 		req.Header.Set("X-Forwarded-For", clientIP)
 		req.Header.Set("X-Real-IP", clientIP)
