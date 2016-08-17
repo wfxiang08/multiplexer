@@ -26,9 +26,9 @@ var configFile = flag.String("config", "config2.yaml", "path to config file, def
 var config Config
 
 type Target struct {
-	Port string `yaml:"port"`
-	Host string `yaml:"host"`
-	OverrideHost bool `yaml:"override_host"`
+	Port         string `yaml:"port"`
+	Host         string `yaml:"host"`
+	OverrideHost bool   `yaml:"override_host"`
 }
 
 type Config struct {
@@ -170,6 +170,7 @@ func logRequest(req *http.Request) {
 }
 
 var acmeFilter = regexp.MustCompile("^/\\.well-known")
+
 // Handle acme (letsencrypt) SimpleHttp/http-01 challenge
 // (or other /.well-known urls)
 func acmeHandler(w http.ResponseWriter, req *http.Request) {
@@ -311,7 +312,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 // Combine header lines, and split at "," (only useful for certain headers)
-func parseHeader (header http.Header, key string) []string {
+func parseHeader(header http.Header, key string) []string {
 	var tokenList []string
 	key_canon := http.CanonicalHeaderKey(key)
 	if _, ok := header[key_canon]; !ok {
@@ -428,13 +429,13 @@ func websocketWriteClose(conn *websocket.Conn, err error) {
 	if websocketIsCloseError(err) {
 		e = websocketCloseError(err)
 	} else {
-		e = &websocket.CloseError{Code:websocket.CloseAbnormalClosure, Text:""}
+		e = &websocket.CloseError{Code: websocket.CloseAbnormalClosure, Text: ""}
 	}
 	debugLog("close code is", e.Code)
 	var closeMessage []byte
 	if (e.Code != websocket.CloseNoStatusReceived) &&
-	   (e.Code != websocket.CloseAbnormalClosure) &&
-	   (e.Code != websocket.CloseTLSHandshake) {
+		(e.Code != websocket.CloseAbnormalClosure) &&
+		(e.Code != websocket.CloseTLSHandshake) {
 		closeMessage = websocket.FormatCloseMessage(e.Code, e.Text)
 	} else {
 		closeMessage = []byte{}
