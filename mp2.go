@@ -28,6 +28,7 @@ var config Config
 type Target struct {
 	Port string `yaml:"port"`
 	Host string `yaml:"host"`
+	OverrideHost bool `yaml:"override_host"`
 }
 
 type Config struct {
@@ -234,6 +235,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	// the outside host: use the original value from req
 	// (keep ":port" unstripped, useful if TlsPort is not 443)
 	//req.Host = host
+	if upstream.OverrideHost {
+		req.Host = upstream.Host
+	}
 	// the transport host
 	req.URL = newURL
 	// unset it

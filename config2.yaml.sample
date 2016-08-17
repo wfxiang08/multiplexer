@@ -10,6 +10,10 @@ forwardtable:
     host: "longhost"
   longhost:
     port: 8080
+  reversehost:
+    port: 443
+    host: www.google.com
+    override_host: true
 
 # port and address to listen on
 plain_port: 80
