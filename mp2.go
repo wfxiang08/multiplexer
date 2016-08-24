@@ -59,7 +59,9 @@ var httpClient = &http.Client{
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: false,
+			//NextProtos: []string{"h2", "http/1.1"},
 		},
+		//TLSNextProto: nil,
 	},
 }
 
@@ -110,6 +112,8 @@ func main() {
 		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
 	}
 
+	//httpClient.Transport.(*http.Transport).TLSClientConfig = nil
+
 	var plainServer *http.Server
 	var tlsServer *http.Server
 	fi, err := ioutil.ReadDir(config.CertDir)
@@ -139,6 +143,7 @@ func main() {
 		},
 		NameToCertificate: mapCert,
 		Certificates:      nil,
+		NextProtos: []string{"h2", "http/1.1"},
 	}
 	tlsServer = &http.Server{
 		Addr:      net.JoinHostPort(config.ListenAddr, config.TlsPort),
@@ -287,6 +292,11 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	resp, err := httpClient.Do(req)
+	log.Printf("%#v\n", httpClient.Transport)
+	log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
+	//resp, err := http.DefaultClient.Do(req)
+	//log.Println(http.DefaultClient)
+	log.Println(resp.Proto)
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
