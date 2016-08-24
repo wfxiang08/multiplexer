@@ -57,10 +57,10 @@ var httpClient = &http.Client{
 		DialTLS:               nil,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: false,
-			//NextProtos: []string{"h2", "http/1.1"},
-		},
+		//TLSClientConfig: &tls.Config{
+		//	InsecureSkipVerify: false,
+		//	//NextProtos: []string{"h2", "http/1.1"},
+		//},
 		//TLSNextProto: nil,
 	},
 }
@@ -77,7 +77,7 @@ var upgrader = websocket.Upgrader{
 // FIXME share tls config with httpClient?
 var websocketDialer = &websocket.Dialer{
 	Proxy:           nil,
-	TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
+	//TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
 }
 
 // Parse config file, set up log file, load cert/key pairs, set up
@@ -108,8 +108,8 @@ func main() {
 	log.Printf("Current config: %#v\n", config)
 
 	if config.SkipVerify != 0 {
-		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
-		//fmt.Println("%#v\n%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify, websocketDialer.TLSClientConfig.InsecureSkipVerify)
+		httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		websocketDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	//httpClient.Transport.(*http.Transport).TLSClientConfig = nil
