@@ -49,12 +49,12 @@ var LOG_FILE = "mp2.log"
 var httpClient = &http.Client{
 	Timeout: 20 * time.Second,
 	Transport: &http.Transport{
-		Proxy: nil,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		DialTLS:               nil,
+		//Proxy: nil,
+		//Dial: (&net.Dialer{
+		//	Timeout:   30 * time.Second,
+		//	KeepAlive: 30 * time.Second,
+		//}).Dial,
+		//DialTLS:               nil,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		//TLSClientConfig: &tls.Config{
@@ -111,8 +111,7 @@ func main() {
 		httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 		websocketDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-
-	//httpClient.Transport.(*http.Transport).TLSClientConfig = nil
+	// BUG: if TLSClientConfig is set, httpClient cannot autoconfig http2
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
@@ -292,8 +291,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	resp, err := httpClient.Do(req)
-	log.Printf("%#v\n", httpClient.Transport)
-	log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
+	//log.Printf("%#v\n", httpClient.Transport)
+	//log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 	//resp, err := http.DefaultClient.Do(req)
 	//log.Println(http.DefaultClient)
 	log.Println(resp.Proto)
