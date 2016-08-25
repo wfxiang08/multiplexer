@@ -47,21 +47,21 @@ type Config struct {
 var LOG_FILE = "mp2.log"
 
 var httpClient = &http.Client{
-	Timeout: 20 * time.Second,
+	Timeout:   20 * time.Second,
 	Transport: &http.Transport{
-		//Proxy: nil,
-		//Dial: (&net.Dialer{
-		//	Timeout:   30 * time.Second,
-		//	KeepAlive: 30 * time.Second,
-		//}).Dial,
-		//DialTLS:               nil,
-		//TLSHandshakeTimeout:   10 * time.Second,
-		//ExpectContinueTimeout: 1 * time.Second,
-		//TLSClientConfig: &tls.Config{
-		//	InsecureSkipVerify: false,
-		//	//NextProtos: []string{"h2", "http/1.1"},
-		//},
-		//TLSNextProto: nil,
+	//Proxy: nil,
+	//Dial: (&net.Dialer{
+	//	Timeout:   30 * time.Second,
+	//	KeepAlive: 30 * time.Second,
+	//}).Dial,
+	//DialTLS:               nil,
+	//TLSHandshakeTimeout:   10 * time.Second,
+	//ExpectContinueTimeout: 1 * time.Second,
+	//TLSClientConfig: &tls.Config{
+	//	InsecureSkipVerify: false,
+	//	//NextProtos: []string{"h2", "http/1.1"},
+	//},
+	//TLSNextProto: nil,
 	},
 }
 
@@ -76,7 +76,7 @@ var upgrader = websocket.Upgrader{
 
 // FIXME share tls config with httpClient?
 var websocketDialer = &websocket.Dialer{
-	Proxy:           nil,
+	Proxy: nil,
 	//TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
 }
 
@@ -160,7 +160,7 @@ func main() {
 		},
 		NameToCertificate: mapCert,
 		Certificates:      nil,
-		NextProtos: []string{"h2", "http/1.1"},
+		NextProtos:        []string{"h2", "http/1.1"},
 	}
 	tlsServer = &http.Server{
 		Addr:      net.JoinHostPort(config.ListenAddr, config.TlsPort),
