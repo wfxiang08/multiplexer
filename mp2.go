@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"github.com/gorilla/websocket"
+	"golang.org/x/net/http2"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -57,10 +58,10 @@ var httpClient = &http.Client{
 	//DialTLS:               nil,
 	//TLSHandshakeTimeout:   10 * time.Second,
 	//ExpectContinueTimeout: 1 * time.Second,
-	//TLSClientConfig: &tls.Config{
-	//	InsecureSkipVerify: false,
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: false,
 	//	//NextProtos: []string{"h2", "http/1.1"},
-	//},
+	},
 	//TLSNextProto: nil,
 	},
 }
@@ -74,10 +75,9 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// FIXME share tls config with httpClient?
 var websocketDialer = &websocket.Dialer{
 	Proxy: nil,
-	//TLSClientConfig: httpClient.Transport.(*http.Transport).TLSClientConfig,
+	TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
 }
 
 // Parse config file, set up log file, load cert/key pairs, set up
@@ -107,24 +107,19 @@ func main() {
 	//defer fh.Close()?
 	log.Printf("Current config: %#v\n", config)
 
-	{
-		// force httpClient to initialize
-		// intentionally use an invalid port
-		_, _ := httpClient.Get("https://localhost:66443")
-		debugLogf("try1 %#v\n", httpClient)
-		debugLogf("try1 %#v\n", httpClient.Transport)
-		debugLogf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
+	// config http client for http2
+	err = http2.ConfigureTransport(httpClient.Transport.(*http.Transport))
+	if err != nil {
+		log.Fatalln(err)
 	}
+	debugLogf("try1 %#v\n", httpClient)
+	debugLogf("try1 %#v\n", httpClient.Transport)
+	debugLogf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 
 	if config.SkipVerify != 0 {
-		if httpClient.Transport.(*http.Transport).TLSClientConfig == nil {
-			httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-		} else {
-			httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
-		}
-		websocketDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
+		websocketDialer.TLSClientConfig.InsecureSkipVerify = true
 	}
-	// BUG: if TLSClientConfig is set, httpClient cannot autoconfig http2
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
