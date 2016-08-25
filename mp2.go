@@ -107,6 +107,11 @@ func main() {
 	//defer fh.Close()?
 	log.Printf("Current config: %#v\n", config)
 
+	if config.SkipVerify != 0 {
+		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
+		websocketDialer.TLSClientConfig.InsecureSkipVerify = true
+	}
+
 	// config http client for http2
 	err = http2.ConfigureTransport(httpClient.Transport.(*http.Transport))
 	if err != nil {
@@ -115,11 +120,6 @@ func main() {
 	debugLogf("try1 %#v\n", httpClient)
 	debugLogf("try1 %#v\n", httpClient.Transport)
 	debugLogf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
-
-	if config.SkipVerify != 0 {
-		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
-		websocketDialer.TLSClientConfig.InsecureSkipVerify = true
-	}
 
 	var plainServer *http.Server
 	var tlsServer *http.Server
