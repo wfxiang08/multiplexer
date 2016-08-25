@@ -109,16 +109,16 @@ func main() {
 
 	{
 		// force httpClient to initialize
-		// invalid port
+		// intentionally use an invalid port
 		_, err := httpClient.Get("https://localhost:66443")
 		if err == nil {
 			//log.Println("try1", resp.Proto)
 		} else {
 			//log.Println(err)
 		}
-		//log.Printf("try1 %#v\n", httpClient)
-		//log.Printf("try1 %#v\n", httpClient.Transport)
-		//log.Printf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
+		debugLogf("try1 %#v\n", httpClient)
+		debugLogf("try1 %#v\n", httpClient.Transport)
+		debugLogf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 	}
 
 	if config.SkipVerify != 0 {
@@ -480,5 +480,11 @@ func debugLog(v ...interface{}) {
 	if config.LogDebug != 0 {
 		v = append([]interface{}{"[DEBUG]"}, v...)
 		log.Println(v...)
+	}
+}
+
+func debugLogf(format string, v ...interface{}) {
+	if config.LogDebug != 0 {
+		log.Printf("[DEBUG] " + format, v...)
 	}
 }
