@@ -34,3 +34,6 @@ skip_verify: 0
 
 # some debug logging
 log_debug: 0
+
+default_host: "localhost"
+sni_compat: true

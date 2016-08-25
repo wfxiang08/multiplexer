@@ -42,6 +42,8 @@ type Config struct {
 	LogFile      string            `yaml:"log_file"`
 	SkipVerify   int               `yaml:"skip_verify"`
 	LogDebug     int               `yaml:"log_debug"`
+	DefaultHost  string            `yaml:"default_host"`
+	SNICompat    bool              `yaml:"sni_compat"`
 }
 
 // logrotate?
@@ -145,6 +147,8 @@ func main() {
 				if ok {
 					return cert, nil
 				}
+			} else if config.SNICompat {
+				return mapCert[config.DefaultHost], nil
 			}
 			return nil, errors.New("<" + clientHello.ServerName + "> not found")
 		},
