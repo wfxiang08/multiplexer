@@ -55,8 +55,8 @@ var httpClient = &http.Client{
 		//	KeepAlive: 30 * time.Second,
 		//}).Dial,
 		//DialTLS:               nil,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		//TLSHandshakeTimeout:   10 * time.Second,
+		//ExpectContinueTimeout: 1 * time.Second,
 		//TLSClientConfig: &tls.Config{
 		//	InsecureSkipVerify: false,
 		//	//NextProtos: []string{"h2", "http/1.1"},
@@ -107,8 +107,26 @@ func main() {
 	//defer fh.Close()?
 	log.Printf("Current config: %#v\n", config)
 
+	{
+		// force httpClient to initialize
+		// invalid port
+		_, err := httpClient.Get("https://localhost:66443")
+		if err == nil {
+			//log.Println("try1", resp.Proto)
+		} else {
+			//log.Println(err)
+		}
+		//log.Printf("try1 %#v\n", httpClient)
+		//log.Printf("try1 %#v\n", httpClient.Transport)
+		//log.Printf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
+	}
+
 	if config.SkipVerify != 0 {
-		httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		if httpClient.Transport.(*http.Transport).TLSClientConfig == nil {
+			httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		} else {
+			httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = false
+		}
 		websocketDialer.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	// BUG: if TLSClientConfig is set, httpClient cannot autoconfig http2
@@ -277,7 +295,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	req.Header.Set("X-Forwarded-Proto", "https")
 
 	connectionList := parseHeader(req.Header, "Connection")
-	log.Println(connectionList)
+	//log.Println(connectionList)
 
 	if websocket.IsWebSocketUpgrade(req) {
 		websocketHandler(w, req, newURL)
@@ -295,7 +313,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 	//resp, err := http.DefaultClient.Do(req)
 	//log.Println(http.DefaultClient)
-	log.Println(resp.Proto)
+	log.Println("[DEBUG]", resp.Proto)
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -458,6 +476,7 @@ func websocketWriteClose(conn *websocket.Conn, err error) {
 // Write log conditioned on config.LogDebug
 func debugLog(v ...interface{}) {
 	if config.LogDebug != 0 {
+		v = append([]interface{}{"[DEBUG]"}, v...)
 		log.Println(v...)
 	}
 }
