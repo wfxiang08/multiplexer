@@ -48,21 +48,21 @@ type Config struct {
 var LOG_FILE = "mp2.log"
 
 var httpClient = &http.Client{
-	Timeout:   20 * time.Second,
+	Timeout: 20 * time.Second,
 	Transport: &http.Transport{
-	//Proxy: nil,
-	//Dial: (&net.Dialer{
-	//	Timeout:   30 * time.Second,
-	//	KeepAlive: 30 * time.Second,
-	//}).Dial,
-	//DialTLS:               nil,
-	//TLSHandshakeTimeout:   10 * time.Second,
-	//ExpectContinueTimeout: 1 * time.Second,
-	TLSClientConfig: &tls.Config{
-		InsecureSkipVerify: false,
-	//	//NextProtos: []string{"h2", "http/1.1"},
-	},
-	//TLSNextProto: nil,
+		//Proxy: nil,
+		//Dial: (&net.Dialer{
+		//	Timeout:   30 * time.Second,
+		//	KeepAlive: 30 * time.Second,
+		//}).Dial,
+		//DialTLS:               nil,
+		//TLSHandshakeTimeout:   10 * time.Second,
+		//ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: false,
+			//	//NextProtos: []string{"h2", "http/1.1"},
+		},
+		//TLSNextProto: nil,
 	},
 }
 
@@ -76,7 +76,7 @@ var upgrader = websocket.Upgrader{
 }
 
 var websocketDialer = &websocket.Dialer{
-	Proxy: nil,
+	Proxy:           nil,
 	TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
 }
 
@@ -475,6 +475,6 @@ func debugLog(v ...interface{}) {
 
 func debugLogf(format string, v ...interface{}) {
 	if config.LogDebug != 0 {
-		log.Printf("[DEBUG] " + format, v...)
+		log.Printf("[DEBUG] "+format, v...)
 	}
 }
