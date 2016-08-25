@@ -313,7 +313,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 	//resp, err := http.DefaultClient.Do(req)
 	//log.Println(http.DefaultClient)
-	debugLog(resp.Proto)
+	if err == nil {
+		debugLog(resp.Proto)
+	}
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
