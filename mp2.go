@@ -110,12 +110,7 @@ func main() {
 	{
 		// force httpClient to initialize
 		// intentionally use an invalid port
-		_, err := httpClient.Get("https://localhost:66443")
-		if err == nil {
-			//log.Println("try1", resp.Proto)
-		} else {
-			//log.Println(err)
-		}
+		_, _ := httpClient.Get("https://localhost:66443")
 		debugLogf("try1 %#v\n", httpClient)
 		debugLogf("try1 %#v\n", httpClient.Transport)
 		debugLogf("try1 %#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
