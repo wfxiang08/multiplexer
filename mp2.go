@@ -68,8 +68,8 @@ var httpClient = &http.Client{
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		// FIXME strip port and check origin == host?
-		debugLog("[DEBUG] Origin:", r.Header.Get("Origin"))
-		debugLog("[DEBUG] Host:", r.Host)
+		debugLog("Origin:", r.Header.Get("Origin"))
+		debugLog("Host:", r.Host)
 		return true
 	},
 }
@@ -313,7 +313,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//log.Printf("%#v\n", httpClient.Transport.(*http.Transport).TLSClientConfig)
 	//resp, err := http.DefaultClient.Do(req)
 	//log.Println(http.DefaultClient)
-	log.Println("[DEBUG]", resp.Proto)
+	debugLog(resp.Proto)
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -360,7 +360,7 @@ func parseHeader(header http.Header, key string) []string {
 func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL) {
 	// force websocket-tls
 	newURL.Scheme = "wss"
-	debugLog("[DEBUG] websocket upstream at", newURL.String())
+	debugLog("websocket upstream at", newURL.String())
 
 	// downstream
 	// Connection and Upgrade are needed
@@ -404,11 +404,11 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go websocketTunnel("[DEBUG] down->up", &wg, conn, connUp)
+	go websocketTunnel("down->up", &wg, conn, connUp)
 	wg.Add(1)
-	go websocketTunnel("[DEBUG] up->down", &wg, connUp, conn)
+	go websocketTunnel("up->down", &wg, connUp, conn)
 	wg.Wait()
-	debugLog("[DEBUG] waitgroup finished")
+	debugLog("waitgroup finished")
 }
 
 // Simplex websocket tunnel, connFrom => connTo
