@@ -36,4 +36,4 @@ skip_verify: 0
 log_debug: 0
 
 default_host: "localhost"
-sni_compat: true
+sni_compat: false
