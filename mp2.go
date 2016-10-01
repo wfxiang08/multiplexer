@@ -258,6 +258,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//req.Host = host
 	if upstream.OverrideHost {
 		req.Host = upstream.Host
+		// FIXME
+		hostport := net.JoinHostPort(upstream.Host, port)
+		newURL.Host = hostport
 	}
 	// the transport host
 	req.URL = newURL
