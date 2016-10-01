@@ -1,6 +1,7 @@
 # debian go packages in /usr/share/gocode
-export GOPATH="$PWD:/usr/share/gocode/:/usr/lib/go-1.6";
+export GOROOT="/home/pkg/go"
+export GOPATH="$PWD:/usr/share/gocode/";
 # for cross compiling
-#export GOOS=linux
+export GOOS=linux
 #export GOARCH=amd64
-#export GOARCH=arm
+export GOARCH=arm
