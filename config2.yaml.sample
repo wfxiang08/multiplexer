@@ -1,6 +1,7 @@
 forwardtable:
   # default target: required
   default:
+    notls: false
     port: 8443
   # other ServerName: lower-case
   "some.virtual.host":
@@ -9,6 +10,7 @@ forwardtable:
     port: 8080
     host: "longhost"
   longhost:
+    notls: true
     port: 8080
   reversehost:
     port: 443

@@ -30,6 +30,7 @@ type Target struct {
 	Port         string `yaml:"port"`
 	Host         string `yaml:"host"`
 	OverrideHost bool   `yaml:"override_host"`
+	NoTLS        bool   `yaml:"notls"`
 }
 
 type Config struct {
@@ -247,6 +248,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	hostport := net.JoinHostPort(host, port)
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
+	if upstream.NoTLS {
+		newURL.Scheme = "http"
+	}
 	newURL.Host = hostport
 
 	// the outside host: use the original value from req
