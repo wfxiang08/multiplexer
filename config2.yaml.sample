@@ -16,6 +16,7 @@ forwardtable:
     port: 443
     host: www.google.com
     override_host: true
+    override_host_url: true
 
 # port and address to listen on
 plain_port: 80

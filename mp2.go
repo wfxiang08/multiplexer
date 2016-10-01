@@ -30,6 +30,7 @@ type Target struct {
 	Port         string `yaml:"port"`
 	Host         string `yaml:"host"`
 	OverrideHost bool   `yaml:"override_host"`
+	OverrideHostURL bool   `yaml:"override_host_url"`
 	NoTLS        bool   `yaml:"notls"`
 }
 
@@ -258,6 +259,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	//req.Host = host
 	if upstream.OverrideHost {
 		req.Host = upstream.Host
+	}
+	if upstream.OverrideHostURL {
 		// FIXME
 		hostport := net.JoinHostPort(upstream.Host, port)
 		newURL.Host = hostport
