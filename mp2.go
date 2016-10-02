@@ -27,11 +27,11 @@ var configFile = flag.String("config", "config2.yaml", "path to config file, def
 var config Config
 
 type Target struct {
-	Port         string `yaml:"port"`
-	Host         string `yaml:"host"`
-	OverrideHost bool   `yaml:"override_host"`
+	Port            string `yaml:"port"`
+	Host            string `yaml:"host"`
+	OverrideHost    bool   `yaml:"override_host"`
 	OverrideHostURL bool   `yaml:"override_host_url"`
-	NoTLS        bool   `yaml:"notls"`
+	NoTLS           bool   `yaml:"notls"`
 }
 
 type Config struct {
