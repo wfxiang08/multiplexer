@@ -3,5 +3,5 @@ export GOROOT="/home/pkg/go"
 export GOPATH="$PWD:/usr/share/gocode/";
 # for cross compiling
 export GOOS=linux
-#export GOARCH=amd64
-export GOARCH=arm
+export GOARCH=amd64
+#export GOARCH=arm
