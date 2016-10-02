@@ -1,4 +1,6 @@
 all: mp2
+clean:
+	rm -fv mp2
 
 %: %.go
 	source ./go_env.sh; \
