@@ -52,7 +52,8 @@ type Config struct {
 var LOG_FILE = "mp2.log"
 
 var httpClient = &http.Client{
-	Timeout: 20 * time.Second,
+	// FIXME: no timeout
+	Timeout: 0 * time.Second,
 	Transport: &http.Transport{
 		//Proxy: nil,
 		//Dial: (&net.Dialer{
