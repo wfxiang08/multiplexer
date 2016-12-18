@@ -91,7 +91,7 @@ var websocketDialer = &websocket.Dialer{
 }
 
 func openLog(logfile string) {
-	fh, err := os.OpenFile(logfile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	fh, err := os.OpenFile(logfile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0640)
 	if err != nil {
 		log.Fatalln("cannot open logfile:", err)
 	}
