@@ -4,5 +4,7 @@ export GOROOT=$(go env GOROOT)
 export GOPATH="$PWD:/usr/share/gocode/:$GOROOT";
 # for cross compiling
 export GOOS=linux
-export GOARCH=amd64
-#export GOARCH=arm
+#export GOARCH=amd64
+export GOARCH=arm
+# soft float?
+export GOARCH=mipsle # >=1.8
