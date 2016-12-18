@@ -16,9 +16,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -50,6 +52,9 @@ type Config struct {
 
 // logrotate?
 var LOG_FILE = "mp2.log"
+var log_fh *os.File
+
+var c_reload chan os.Signal
 
 var httpClient = &http.Client{
 	// FIXME: no timeout
@@ -85,6 +90,19 @@ var websocketDialer = &websocket.Dialer{
 	TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
 }
 
+func openLog(logfile string) {
+	fh, err := os.OpenFile(logfile, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatalln("cannot open logfile:", err)
+	}
+	log.SetOutput(fh)
+	log.Printf("Current config: %#v\n", config)
+	if log_fh != nil {
+		log_fh.Close()
+	}
+	log_fh = fh
+}
+
 // Parse config file, set up log file, load cert/key pairs, set up
 // plain/tls servers
 func main() {
@@ -104,13 +122,8 @@ func main() {
 	if config.LogFile != "" {
 		LOG_FILE = config.LogFile
 	}
-	fh, err := os.OpenFile(LOG_FILE, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatalln("cannot open logfile:", err)
-	}
-	log.SetOutput(fh)
+	openLog(LOG_FILE)
 	//defer fh.Close()?
-	log.Printf("Current config: %#v\n", config)
 
 	if config.SkipVerify != 0 {
 		httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
@@ -171,6 +184,19 @@ func main() {
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/", redirectHandler)
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
+
+	c_reload = make(chan os.Signal, 1)
+	signal.Notify(c_reload, syscall.SIGHUP)
+	go func() {
+		for {
+			select {
+			case s := <-c_reload:
+				openLog(LOG_FILE)
+				log.Println("received", s)
+				log.Println("reopened logfile")
+			}
+		}
+	}()
 	go func() {
 		err := tlsServer.ListenAndServeTLS("", "")
 		if err != nil {
