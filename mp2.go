@@ -185,7 +185,7 @@ func main() {
 	plainServer.Handler.(*http.ServeMux).HandleFunc("/.well-known/", acmeHandler)
 	tlsServer.Handler.(*http.ServeMux).HandleFunc("/", forwardHandler)
 
-	c_reload = make(chan os.Signal, 1)
+	c_reload = make(chan os.Signal)
 	signal.Notify(c_reload, syscall.SIGHUP)
 	go func() {
 		for {
