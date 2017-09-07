@@ -347,6 +347,7 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	if err == nil {
 		debugLog(resp.Proto)
 	}
+	defer resp.Body.Close()
 	if err != nil {
 		log.Println("client.Do err:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -364,7 +365,6 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Println("io.Copy err:", err)
 	}
-	resp.Body.Close()
 	// FIXME process trailers?
 	if len(resp.Trailer) > 0 {
 		log.Println("response has trailer?")
