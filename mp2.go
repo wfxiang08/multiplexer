@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-var configFile = flag.String("config", "config2.yaml", "path to config file, default config2.yaml")
+var configFile = flag.String("config", "mp2.yaml", "path to config file")
 
 var config Config
 
