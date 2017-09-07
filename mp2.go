@@ -427,7 +427,8 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 			if err != nil {
 				log.Println("io.Copy err:", err)
 			}
-			respUp.Body.Close()
+			// No need according to doc
+			//respUp.Body.Close()
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
