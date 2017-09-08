@@ -229,13 +229,15 @@ func acmeHandler(w http.ResponseWriter, req *http.Request) {
 	http.ServeFile(w, req, filename)
 }
 
-// Strip ":port" from req.Host if present
+// Strip ":port" from req.Host if present, otherwise just return req.Host
 func parseHost(req *http.Request) string {
 	//if req.Host == "" {
 	//	log.Fatalln("req.Host empty") // net/http server set req.Host automatically
 	//}
+	// Extract the hostname part req.Host == "some.hostname.net:1234"
 	host_strip, _, err := net.SplitHostPort(req.Host)
 	if err != nil {
+		// If req.Host doesn't contain any port part.
 		//log.Println("net.SplitHostPort error", err)
 		return req.Host
 	}
@@ -273,7 +275,9 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 		host = upstream.Host
 	}
 
+	// Construct the URL on the internal web server
 	hostport := net.JoinHostPort(host, port)
+	// Take the original URL (keeping only the the path/query part)
 	newURL, _ := req.URL.Parse("")
 	newURL.Scheme = "https"
 	if upstream.NoTLS {
@@ -281,14 +285,16 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	newURL.Host = hostport
 
-	// the outside host: use the original value from req
-	// (keep ":port" unstripped, useful if TlsPort is not 443)
+	// Don't change "Host:" header: use the original value from req,
+	// necessary for external service running on non-standard ports.
 	//req.Host = host
+
+	// (?) In case when we want to act as a reverse proxy to some arbitrary website
 	if upstream.OverrideHost {
 		req.Host = upstream.Host
 	}
+	// FIXME: document here
 	if upstream.OverrideHostURL {
-		// FIXME
 		hostport := net.JoinHostPort(upstream.Host, port)
 		newURL.Host = hostport
 	}
