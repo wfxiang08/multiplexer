@@ -265,6 +265,10 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	debugLog("origin:", req.Header.Get("Origin"))
 	host := parseHost(req)
 
+	// The mangling of req.Host and req.URL
+	// req.Host is for the "Host:" header
+	// req.URL is for DNS resolving and path/query part.
+
 	// use case-insensitive comparison for host name
 	upstream, ok := config.ForwardTable[strings.ToLower(host)]
 	if !ok {
@@ -282,6 +286,8 @@ func forwardHandler(w http.ResponseWriter, req *http.Request) {
 	newURL.Scheme = "https"
 	if upstream.NoTLS {
 		newURL.Scheme = "http"
+		// If using plaintext, restrict the upstream server to be localhost
+		hostport = net.JoinHostPort("127.0.0.1", port)
 	}
 	newURL.Host = hostport
 
