@@ -416,12 +416,16 @@ func websocketHandler(w http.ResponseWriter, req *http.Request, newURL *url.URL)
 	}
 	defer conn.Close()
 
-	// upstream
+	// To send to upstream server (websocket)
+	// several headers need to be removed for websocketDialer.Dial() to avoid
+	// duplicate. (TODO: check for relevant RFCs)
 	req.Header.Del("Upgrade")
 	req.Header.Del("Connection")
 	req.Header.Del("Sec-WebSocket-Key")
 	req.Header.Del("Sec-WebSocket-Version")
 	req.Header.Del("Sec-WebSocket-Protocol")
+	req.Header.Del("Sec-Websocket-Extensions")
+
 	req.Header.Set("Host", req.Host)
 	connUp, respUp, err := websocketDialer.Dial(newURL.String(), req.Header)
 	if err != nil {
